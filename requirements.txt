@@ -1,0 +1,6 @@
+Flask
+pandas
+pypdf
+langchain-community
+tiktoken
+faiss-cpu
