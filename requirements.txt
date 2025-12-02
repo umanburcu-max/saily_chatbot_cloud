@@ -9,7 +9,6 @@ fastapi
 uvicorn[standard]
 openai
 PdfReader
-OpenAIEmbeddings
 FAISS
 re
 csv
