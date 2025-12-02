@@ -4,3 +4,5 @@ pypdf
 langchain-community
 tiktoken
 faiss-cpu
+fastapi
+uvicorn[standard]
