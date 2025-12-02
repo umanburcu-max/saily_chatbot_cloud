@@ -235,7 +235,12 @@ EXE_DIR     = _exe_dir()
 EMBED_DIR_LCL = os.path.join(APPDATA_DIR, "embeds")
 URLS_DIR_LCL  = os.path.join(APPDATA_DIR, "embeds_urls")
 VSTORE_DIR    = os.path.join(APPDATA_DIR, "vectorstore")
-LOGFILE       = os.path.join(APPDATA_DIR, "app.log")
+#LOGFILE       = os.path.join(APPDATA_DIR, "app.log")
+LOG_DIR = "/root/.odyoduyu_chatbot"
+LOG_FILE = os.path.join(LOG_DIR, "app.log")
+
+# Klasör yoksa oluştur
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # İkincil (EXE yanında) ve seed (bundle içi)
 EMBED_DIR_EXE   = os.path.join(EXE_DIR, "embeds") if EXE_DIR else None
