@@ -9,7 +9,6 @@ fastapi
 uvicorn[standard]
 openai
 PdfReader
-ChatOpenAI
 OpenAIEmbeddings
 FAISS
 re
