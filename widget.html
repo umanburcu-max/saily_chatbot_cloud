@@ -101,7 +101,7 @@
 
 <script>
   // 🔗 Proxy/Log katmanı
-  const API_BASE = "https://chatlog.api-saily.com";
+  const API_BASE = new URLSearchParams(window.location.search).get("api");
   const CHAT_URL = API_BASE + "/chat";
 
   // Proxy için iç anahtar (upstream token DEĞİL!)
