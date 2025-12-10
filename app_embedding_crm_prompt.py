@@ -44,6 +44,30 @@ import uuid
 # ========================================
 
 
+for h in logging.root.handlers[:]:
+    logging.root.removeHandler(h)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True  # ✅ PYTHON 3.8+ İÇİN ÇOK KRİTİK
+)
+
+logger = logging.getLogger("saily")
+logger.setLevel(logging.INFO)
+
+
+def log(*parts):
+    msg = " ".join(str(p) for p in parts)
+    logger.info(msg)
+
+
+log("BOOT: app started")
+log("burcu")
+print("CHAT REQUEST GELDİ")
+
+
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("Embedded API key missing ")
@@ -709,23 +733,7 @@ def is_affirmative_freeform(text: str) -> bool:
 #     except Exception:
 #         pass
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],  # stdout'a yaz
-)
 
-logger = logging.getLogger("saily")
-
-def log(*parts):
-    msg = " ".join(str(p) for p in parts)
-    # logging ile stdout'a yaz
-    logger.info(msg)
-
-
-# Başlangıçta bir satır yaz (dosya oluşsun)
-log("boot: app started")
-log("burcu")
 
 def _src_label(meta: dict) -> str:
     if not meta:
