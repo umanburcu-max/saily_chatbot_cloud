@@ -692,24 +692,32 @@ def is_affirmative_freeform(text: str) -> bool:
 
 # --- Safe logging (UTF-8) ---
 
+# logging.basicConfig(
+#     filename=LOGFILE,          # dosyaya yaz
+#     level=logging.INFO,
+#     format="%(asctime)s %(levelname)s %(message)s",
+#     encoding="utf-8",          # <-- kritik
+# )
+
+
+# # en üstte LOGFILE zaten tanımlı
+# def log(*parts):
+#     try:
+#         msg = " ".join(str(p) for p in parts)
+#         with open(LOGFILE, "a", encoding="utf-8", errors="replace") as f:
+#             f.write(msg + "\n")
+#     except Exception:
+#         pass
+
 logging.basicConfig(
-    filename=LOGFILE,          # dosyaya yaz
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    encoding="utf-8",          # <-- kritik
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    stream=sys.stdout
 )
 
-
-# en üstte LOGFILE zaten tanımlı
 def log(*parts):
-    try:
-        msg = " ".join(str(p) for p in parts)
-        with open(LOGFILE, "a", encoding="utf-8", errors="replace") as f:
-            f.write(msg + "\n")
-    except Exception:
-        pass
-
-
+    msg = " ".join(str(p) for p in parts)
+    logging.info(msg)
 
 
 # Başlangıçta bir satır yaz (dosya oluşsun)
