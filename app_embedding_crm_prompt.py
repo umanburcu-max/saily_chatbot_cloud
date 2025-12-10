@@ -711,13 +711,16 @@ def is_affirmative_freeform(text: str) -> bool:
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    stream=sys.stdout
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],  # stdout'a yaz
 )
+
+logger = logging.getLogger("saily")
 
 def log(*parts):
     msg = " ".join(str(p) for p in parts)
-    logging.info(msg)
+    # logging ile stdout'a yaz
+    logger.info(msg)
 
 
 # Başlangıçta bir satır yaz (dosya oluşsun)
