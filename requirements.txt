@@ -9,3 +9,4 @@ fastapi
 uvicorn[standard]
 openai
 langchain_openai
+psycopg2
