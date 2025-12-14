@@ -34,7 +34,7 @@ from typing import Optional, Dict, Any
 import requests
 from flask import Flask, request, jsonify
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Text, DateTime, ForeignKey, JSON, Index
+    create_engine, Column, Integer, String, Text, DateTime, ForeignKey, JSON, Index, Boolean
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 
@@ -123,6 +123,36 @@ class Message(Base):
             "token_output": self.token_output,
             "meta": self.meta or {},
         }
+    
+class KvkkConsent(Base):
+    __tablename__ = "kvkk_consents"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Conversation ile ilişki (opsiyonel ama faydalı)
+    conversation_id_fk = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    conversation = relationship("Conversation", backref="kvkk_consents")
+
+    # Aynı zamanda session_id de tutalım (widget tarafındaki SESSION)
+    session_id = Column(String(128), index=True, nullable=True)
+
+    # Kişiyi tanımlamaya yarayacak alanlar (şimdilik None da olabilir)
+    phone = Column(String(32), index=True, nullable=True)
+    name = Column(String(128), nullable=True)
+
+    # Onay bilgisi
+    consent_given = Column(Boolean, nullable=False)        # True = onay verdi
+    consent_text_version = Column(String(32), nullable=True)  # Örn: "v1.0"
+    consent_text_hash = Column(String(128), nullable=True)    # İmzalanan metnin hash’i
+
+    # Teknik bilgiler
+    channel = Column(String(32), nullable=True)       # "web_widget", "whatsapp" vs.
+    ip_address = Column(String(64), nullable=True)
+    user_agent = Column(Text, nullable=True)
+
+    # Zaman damgası
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 
 Base.metadata.create_all(engine)
 
@@ -254,6 +284,43 @@ def _log_message(
     db.refresh(m)
     return m
 
+from sqlalchemy.orm import Session
+
+def save_kvkk_consent(
+    db: Session,
+    *,
+    conversation: Optional[Conversation],
+    session_id: Optional[str],
+    phone: Optional[str],
+    name: Optional[str],
+    consent_given: bool,
+    channel: str,
+    ip_address: Optional[str],
+    user_agent: Optional[str],
+    consent_text_version: Optional[str] = None,
+    consent_text_hash: Optional[str] = None,
+):
+    """
+    KVKK onay kaydı oluşturur.
+    """
+    consent = KvkkConsent(
+        conversation=conversation,
+        session_id=session_id,
+        phone=phone,
+        name=name,
+        consent_given=consent_given,
+        channel=channel,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        consent_text_version=consent_text_version,
+        consent_text_hash=consent_text_hash,
+    )
+    db.add(consent)
+    db.commit()
+    db.refresh(consent)
+    return consent
+
+
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
 
 @app.before_request
@@ -313,6 +380,36 @@ def chat():
             return jsonify({"error": "message is required"}), 400
 
         conv = _get_or_create_conversation(db, session_id=session_id, user_id=user_id)
+        
+        # İstemcinin IP ve User-Agent bilgisi
+        ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
+        user_agent = request.headers.get("User-Agent")
+        
+        # KVKK onayı geldiyse ve daha önce bu session için onay yoksa kaydet
+        if kvkk_ok:
+            existing = (
+                db.query(KvkkConsent)
+                .filter(
+                    KvkkConsent.session_id == session_id,
+                    KvkkConsent.consent_given == True,
+                )
+                .first()
+            )
+            if existing is None:
+                save_kvkk_consent(
+                    db,
+                    conversation=conv,
+                    session_id=session_id,
+                    phone=None,          # Şimdilik yok; ileride widget’tan alabiliriz
+                    name=None,           # Şimdilik yok; ileride eklenebilir
+                    consent_given=True,
+                    channel="web_widget",
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    consent_text_version="v1.0",
+                    consent_text_hash=None,  # İstersen KVKK metninin hash’ini koyarsın
+                )
+
 
         # Log user message
         _log_message(db, conv, role="user", content=message, request_id=request_id)
