@@ -38,6 +38,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker, scoped_session
 
+from sqlalchemy.sql import func
+
 from flask import send_from_directory
 
 # -----------------------------
@@ -96,7 +98,7 @@ class Message(Base):
     conversation_id_fk = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
     role = Column(String(32), nullable=False)  # 'user' | 'assistant' | 'system'
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Optional observability fields
     request_id = Column(String(64), index=True, nullable=True)
@@ -151,7 +153,7 @@ class KvkkConsent(Base):
     user_agent = Column(Text, nullable=True)
 
     # Zaman damgası
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 Base.metadata.create_all(engine)
@@ -319,6 +321,7 @@ def save_kvkk_consent(
     db.commit()
     db.refresh(consent)
     return consent
+
 
 
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
