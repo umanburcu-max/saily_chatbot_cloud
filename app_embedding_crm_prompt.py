@@ -318,7 +318,7 @@ SESS: dict[str, Ctx] = {}
 def update_kvkk_identity_by_session(session_id: str, full_name: str | None, phone: str | None):
     import os
     from sqlalchemy import create_engine, text
-
+    log("update_kvkk içinde")
     if not session_id:
         return
 
@@ -330,7 +330,8 @@ def update_kvkk_identity_by_session(session_id: str, full_name: str | None, phon
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     engine = create_engine(db_url)
-
+    log("full_name", full_name)
+    log("phone", phone) 
     sql = text("""
         UPDATE kvkk_consents
         SET
@@ -426,6 +427,7 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
             }
     
     # KVKK identity update: lead sonucu ne olursa olsun dene (hata çıksa da sessiz geç)
+    log("ensure, session_id", session_id)
     if session_id:
         try:
             update_kvkk_identity_by_session(session_id, full_name, phone)
