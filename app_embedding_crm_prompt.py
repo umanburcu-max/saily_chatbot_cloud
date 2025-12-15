@@ -424,15 +424,21 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
                 "reason": f"create_failed: {e!r}",
                 "lead": None,
             }
-
+    
+    # KVKK identity update: lead sonucu ne olursa olsun dene (hata çıksa da sessiz geç)
+    if session_id:
+        try:
+            update_kvkk_identity_by_session(session_id, full_name, phone)
+        except Exception as e:
+            log("[ensure_crm_lead][kvkk_update] exc:", repr(e))    
+        
+        
     if not lead_doc:
         return {
             "created": False,
             "reason": "lead_not_found_or_create_failed",
             "lead": None,
         }
-    if session_id:
-        update_kvkk_identity_by_session(session_id, full_name, phone)
         
     return {
         "created": True,   # veya istersen found/create ayrımına göre set edebilirsin
