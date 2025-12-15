@@ -400,7 +400,7 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
                 lead_validity="Geçerli",
                 lead_statu="ATAMA BEKLİYOR",
                 source_group="Dijital Pazarlama",
-                main_source="Sanal Asistan",        # istersen "Chatbot" yaparsın
+                main_source="Sanal Asistan",
                 sub_source="Chatbot",
                 language=crm_language,
                 country=crm_country,
@@ -412,38 +412,32 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
                 advertisement_message="Sanal Asistan tarafından üretildi"
             )
             log("[ensure_crm_lead][create_lead] doc =", doc)
-
-            # Frappe genelde {"data": {...}} döndürüyor, normalize edelim:
+    
             if isinstance(doc, dict) and isinstance(doc.get("data"), dict):
                 lead_doc = doc["data"]
             elif isinstance(doc, dict):
                 lead_doc = doc
         except Exception as e:
             log("[ensure_crm_lead][create_lead] exc:", repr(e))
-            return {
-                "created": False,
-                "reason": f"create_failed: {e!r}",
-                "lead": None,
-            }
+            lead_doc = None
+            create_err = e  # hata bilgisini sakla
     
-    # KVKK identity update: lead sonucu ne olursa olsun dene (hata çıksa da sessiz geç)
     log("ensure, session_id", session_id)
     if session_id:
         try:
             update_kvkk_identity_by_session(session_id, full_name, phone)
         except Exception as e:
-            log("[ensure_crm_lead][kvkk_update] exc:", repr(e))    
-        
-        
+            log("[ensure_crm_lead][kvkk_update] exc:", repr(e))
+    
     if not lead_doc:
         return {
             "created": False,
-            "reason": "lead_not_found_or_create_failed",
+            "reason": f"create_failed: {create_err!r}" if "create_err" in locals() else "lead_not_found_or_create_failed",
             "lead": None,
         }
-        
+    
     return {
-        "created": True,   # veya istersen found/create ayrımına göre set edebilirsin
+        "created": True,
         "reason": "ok",
         "lead": lead_doc,
     }
