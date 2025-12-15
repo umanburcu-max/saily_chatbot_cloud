@@ -216,7 +216,11 @@ def history_as_text(sid: str, max_chars: int = 1200) -> str:
     lines = []
     for role, msg in list(h):
         prefix = "Kullanıcı" if role == "user" else "Asistan"
-        lines.append(f"{prefix}: {(msg or '').strip().replace('\n',' ')}")
+        lines.append(
+            "{}: {}".format(prefix, (msg or "").strip().replace("\n", " "))
+        )
+        
+        
     return "\n".join(lines)[-max_chars:]
 
 
@@ -757,7 +761,10 @@ def build_context_from_hits(hits, max_chars=6000, rid: str | None = None):
         body = (getattr(d, "page_content", "") or "").strip()
         if not body:
             continue
-        tagged = f"[SRC:{src}]\n{body}"
+        tagged = (
+            f"[SRC:{src}]\n"
+            f"{body}"
+        )
         parts.append(tagged)
         used.append(src)
 
@@ -952,7 +959,11 @@ def _ingest_urls_in_dirs(max_urls=100):
             try:
                 t0 = time.time()
                 txt = _fetch_url_to_text(u)
-                tagged = f"[URL:{u}]\n{txt}"
+                tagged = (
+                    f"[URL:{u}]\n"
+                    f"{txt}"
+                )
+                
                 texts.append(tagged)
                 total += 1
                 log(f"[INGEST] fetched: {u} → chars={len(txt)} time={time.time()-t0:.2f}s")
@@ -1641,7 +1652,10 @@ def read_excel_like(p: str) -> str:
                 s = r.get(soru_col, "")
                 c = r.get(cevap_col, "")
                 if s or c:
-                    rows.append(f"Soru: {s}\nCevap: {c}")
+                    rows.append(
+                        f"Soru: {s}\n"
+                        f"Cevap: {c}"
+                    )
             return "\n\n---\n\n".join(rows)
 
         # Soru/Cevap yoksa genel satır düzleştirme
@@ -1749,7 +1763,10 @@ def read_excel_like(p: str) -> str:
                 soru = str(r.get(soru_col, "")).strip()
                 cevap = str(r.get(cevap_col, "")).strip()
                 if soru or cevap:
-                    lines.append(f"Soru: {soru}\nCevap: {cevap}")
+                    lines.append(
+                        f"Soru: {soru}\n"
+                        f"Cevap: {cevap}"
+                    )
                     return "\n\n".join(lines)
                 else:
                     return ""
@@ -1779,7 +1796,13 @@ def read_excel_like(p: str) -> str:
         kisi = str(r[pers_col]).strip()
         sube = str(r[sube_col]).strip()
         schedule = " | ".join(gunler) if gunler else "Çalışma saati bilgisi yok"
-        lines.append(f"Personel: {kisi}\nŞube: {sube}\nProgram: {schedule}")
+        line = (
+            f"Personel: {kisi}\n"
+            f"Şube: {sube}\n"
+            f"Program: {schedule}"
+        )
+        lines.append(line)
+        
     return "\n\n".join(lines)
 
     def format_sube_konum(df):
@@ -1893,7 +1916,10 @@ def load_all_docs():
                         if t_stripped.startswith("[URL:"):
                             tagged = t_stripped
                         else:
-                            tagged = f"[DOSYA:{name}]\n{t_stripped}"
+                            tagged = (
+                                f"[DOSYA:{name}]\n"
+                                f"{t_stripped}"
+                            )
                         texts.append(tagged)
                         seen.add(name)
                         log("[EMBED] loaded:", name, "chars=", len(t_stripped))
@@ -2500,14 +2526,16 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
 
         if res.get("lead") and res.get("reason") == "ok":
             return (
-                f"Teşekkürler Sayın {name} 🙏\n\n"
+                f"Teşekkürler Sayın {name} 🙏\n"
+                f"\n"
                 f"'{service}' ile ilgili talebinizi başarıyla oluşturduk. "
                 f"En kısa sürede {phone} numarasından sizinle iletişime geçeceğiz. "
                 "Görüşmek üzere."
             )
         else:
             return (
-                f"Teşekkürler Sayın {name} 🙏\n\n"
+                f"Teşekkürler Sayın {name} 🙏\n"
+                f"\n"
                 f"'{service}' ile ilgili talebinizi aldım ancak sistemimizde kayıt oluştururken teknik bir sorun yaşandı. "
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
@@ -2532,14 +2560,16 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         # Fiyat / genel bilgi için mesaj
         if res.get("lead") and res.get("reason") == "ok":
             return (
-                f"Teşekkürler Sayın {name} 🙏\n\n"
+                f"Teşekkürler Sayın {name} 🙏\n"
+                f"\n"
                 f"Talebinizi başarıyla kaydettim"
                 f" ({generic_service}). "
                 f"En kısa sürede {phone} numarasından sizinle iletişime geçeceğiz."
             )
         else:
             return (
-                f"Teşekkürler Sayın {name} 🙏\n\n"
+                f"Teşekkürler Sayın {name} 🙏\n"
+                f"\n"
                 f"Talebinizi aldım"
                 f" ({generic_service}), ancak sistemimizde kayıt oluştururken teknik bir sorun yaşandı. "
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
