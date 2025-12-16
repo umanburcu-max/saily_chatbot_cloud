@@ -330,7 +330,10 @@ def update_kvkk_identity_by_session(session_id, name=None, phone=None):
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-    engine = create_engine(db_url)
+    # 🔑 psycopg v3 driver’ı zorla
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    engine = create_engine(db_url, pool_pre_ping=True)
 
     sql = text("""
         UPDATE kvkk_consents
@@ -339,7 +342,7 @@ def update_kvkk_identity_by_session(session_id, name=None, phone=None):
           phone = COALESCE(phone, :phone)
         WHERE session_id = :session_id
           AND consent_given = true
-        RETURNING id, session_id, name, phone;
+        RETURNING id, name, phone;
     """)
 
     with engine.begin() as conn:
@@ -350,6 +353,7 @@ def update_kvkk_identity_by_session(session_id, name=None, phone=None):
         })
         row = res.fetchone()
         log("[kvkk_update] returning:", row)
+
 
 
 def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, session_id=None):
