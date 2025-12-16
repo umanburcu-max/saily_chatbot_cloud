@@ -315,38 +315,41 @@ crm = make_crm_adapter()
 # Oturum başına planlayıcı context (MVP: RAM; üretimde Redis önerilir)
 SESS: dict[str, Ctx] = {}
 
-def update_kvkk_identity_by_session(session_id: str, full_name: str | None, phone: str | None):
+def update_kvkk_identity_by_session(session_id, name=None, phone=None):
     import os
     from sqlalchemy import create_engine, text
-    log("update_kvkk içinde")
+
     if not session_id:
         return
 
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
+        log("[kvkk_update] DATABASE_URL missing")
         return
 
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     engine = create_engine(db_url)
-    log("full_name", full_name)
-    log("phone", phone) 
+
     sql = text("""
         UPDATE kvkk_consents
         SET
-          name  = COALESCE(name, :full_name),
+          name  = COALESCE(name, :name),
           phone = COALESCE(phone, :phone)
         WHERE session_id = :session_id
           AND consent_given = true
+        RETURNING id, session_id, name, phone;
     """)
 
     with engine.begin() as conn:
-        conn.execute(sql, {
-            "full_name": full_name,
+        res = conn.execute(sql, {
+            "session_id": session_id,
+            "name": name,
             "phone": phone,
-            "session_id": session_id
         })
+        row = res.fetchone()
+        log("[kvkk_update] returning:", row)
 
 
 def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, session_id=None):
