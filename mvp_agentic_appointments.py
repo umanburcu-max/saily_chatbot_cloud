@@ -1202,7 +1202,7 @@ def make_crm_adapter() -> Any:
     # )
     
     # === config ===
-    APPT_BASE_URL = os.getenv("APPT_BASE_URL", "http://odyoduyu.sailead.com.tr")  # 443
+    APPT_BASE_URL = os.getenv("APPT_BASE_URL", "http://demo.sailead.com.tr")  # 443
     APPT_AUTH_MODE = os.getenv("APPT_AUTH_MODE", "frappe_token")
     APPT_API_KEY   = os.getenv("APPT_API_KEY", "") # c2eaf5cedf87e65
     APPT_API_SECRET= os.getenv("APPT_API_SECRET", "") # ea279e4183f904e

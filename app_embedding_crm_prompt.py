@@ -28,20 +28,7 @@ import uuid
 
 
 
-# === Embedded API key (basit gizleme) ===
-# import base64
 
-# Buraya kendi key'inin base64 karşılığını koy (örnek: "c2st...==")
-# Komutla üret:  >>> import base64; base64.b64encode(b"sk-...").decode()
-# _ENC_KEY = "c2stcHJvai1ValF3c0RYamNySjhVZXFtSHI3NVlvU3lkM0ZaUVUtYUtzZTZ0SnRlYkVLeTVHcXhQOHgzM0xqUXNTTkowWUQtdnl4eDJFUlFvSFQzQmxia0ZKcVBlXzNFeTdXYmt4X1E2TXczM3VRU21EU1Bqam4xTkxRT3hPYW83NG1PcnM4LXFTVmpXSE9OdWtxWWdMUmdGaE9QTVE1enp4WUE="
-
-# def get_api_key() -> str:
-#     try:
-#         return base64.b64decode(_ENC_KEY).decode("utf-8")
-#     except Exception:
-#         # Her ihtimale karşı boş dönmesin
-#         return ""
-# ========================================
 
 
 for h in logging.root.handlers[:]:
@@ -251,8 +238,8 @@ def _bundle_root():
 
 def _user_appdata():
     home = os.path.expanduser("~")
-    return os.path.join(home, "AppData", "Local", "OdyoduyuChatbot") if platform.system() == "Windows" \
-           else os.path.join(home, ".odyoduyu_chatbot")
+    return os.path.join(home, "AppData", "Local", "SailyaiChatbot") if platform.system() == "Windows" \
+           else os.path.join(home, ".sailyai_chatbot")
 
 # Kökler
 APPDATA_DIR = _user_appdata()
@@ -264,7 +251,7 @@ EMBED_DIR_LCL = os.path.join(APPDATA_DIR, "embeds")
 URLS_DIR_LCL  = os.path.join(APPDATA_DIR, "embeds_urls")
 VSTORE_DIR    = os.path.join(APPDATA_DIR, "vectorstore")
 #LOGFILE       = os.path.join(APPDATA_DIR, "app.log")
-LOG_DIR = "/root/.odyoduyu_chatbot"
+LOG_DIR = "/root/.sailyai_chatbot"
 LOGFILE = os.path.join(LOG_DIR, "app.log")
 
 # Klasör yoksa oluştur
@@ -300,10 +287,10 @@ if _meipass and _meipass not in sys.path:
 try:
   from mvp_agentic_appointments import (
       Ctx,
-      GenericCRMAdapterInMemory,
-      GenericCRMAdapterHTTP,
-      make_crm_adapter,
-      run_planner, on_user_select_slot, on_user_confirm, on_user_reject, on_user_cancel
+#      GenericCRMAdapterInMemory,
+#      GenericCRMAdapterHTTP,
+      make_crm_adapter
+#      run_planner, on_user_select_slot, on_user_confirm, on_user_reject, on_user_cancel
   )
 except ModuleNotFoundError:
     raise
@@ -461,25 +448,25 @@ WEEKDAY_WORDS = (
     "bugün","yarın","öbür","hafta","gün","saat"
 )
 
-import re
+# import re
 
-# Şube isimleri → resourceId eşlemesi (örnek)
-BRANCHES = {
-    "kozyatağı": 1,
-    "bakırköy": 2,
-    "göztepe": 3,
-    "şişli torun center": 4,
-}
-DEFAULT_BRANCH = "kozyatağı"  # tek şube varsa buna sabitleyebilirsin
+# # Şube isimleri → resourceId eşlemesi (örnek)
+# BRANCHES = {
+#     "kozyatağı": 1,
+#     "bakırköy": 2,
+#     "göztepe": 3,
+#     "şişli torun center": 4,
+# }
+# DEFAULT_BRANCH = "kozyatağı"  # tek şube varsa buna sabitleyebilirsin
 
-# "hangi şube?" sorusunu ve şube adını yakalama
-BRANCH_Q_RE = re.compile(r"(hangi\s+şub(e|ede|eye)|hangi\s+lokasyon|nerede)", re.I)
-def detect_branch_name(t: str):
-    t = t.lower()
-    for name in BRANCHES.keys():
-        if name in t:
-            return name
-    return None
+# # "hangi şube?" sorusunu ve şube adını yakalama
+# BRANCH_Q_RE = re.compile(r"(hangi\s+şub(e|ede|eye)|hangi\s+lokasyon|nerede)", re.I)
+# def detect_branch_name(t: str):
+#     t = t.lower()
+#     for name in BRANCHES.keys():
+#         if name in t:
+#             return name
+#     return None
 
 # Telefon (5XX XXXXXXX) yakalama
 
@@ -741,25 +728,25 @@ def normalize_tr(s: str) -> str:
     return s.lower().strip()
 
 # Olumlu tetikleyiciler (geniş tutuldu; dilediğin gibi düzenleyebilirsin)
-AFFIRM_KEYWORDS = {
-    "olur","tamam","istiyorum","isterim","alabilirim","alayim","alayım",
-    "ok","okey","evet","uygun","randevu al","randevu alalim","randevu alalım","ayarla"
-}
+# AFFIRM_KEYWORDS = {
+#     "olur","tamam","istiyorum","isterim","alabilirim","alayim","alayım",
+#     "ok","okey","evet","uygun","randevu al","randevu alalim","randevu alalım","ayarla"
+# }
 
-# (Opsiyonel) açık olumsuzlar — yanlış tetiklemeyi önler
-NEGATIVE_KEYWORDS = {
-    "hayir","hayır","istemiyorum","vazgec","vazgeç","vazgeciyorum","iptal","olmaz","yok"
-}
+# # (Opsiyonel) açık olumsuzlar — yanlış tetiklemeyi önler
+# NEGATIVE_KEYWORDS = {
+#     "hayir","hayır","istemiyorum","vazgec","vazgeç","vazgeciyorum","iptal","olmaz","yok"
+# }
 
-def is_affirmative_freeform(text: str) -> bool:
-    t = normalize_tr(text)
-    # kelime/ibare içerme kontrolü
-    if any(k in t for k in AFFIRM_KEYWORDS):
-        # "istemiyorum" gibi olumsuz ifadeler varsa tetikleme
-        if any(n in t for n in NEGATIVE_KEYWORDS):
-            return False
-        return True
-    return False
+# def is_affirmative_freeform(text: str) -> bool:
+#     t = normalize_tr(text)
+#     # kelime/ibare içerme kontrolü
+#     if any(k in t for k in AFFIRM_KEYWORDS):
+#         # "istemiyorum" gibi olumsuz ifadeler varsa tetikleme
+#         if any(n in t for n in NEGATIVE_KEYWORDS):
+#             return False
+#         return True
+#     return False
 
 # --- Safe logging (UTF-8) ---
 
@@ -1275,6 +1262,7 @@ def update_slots_from_text(sid: str, user_text: str):
             r"ses terapisi": "Ses Terapisi",
         }
 
+        
         for pattern, label in SERVICE_MAP.items():
             if re.search(pattern, txt_clean):
                 merged["service"] = label
@@ -1362,11 +1350,11 @@ TR_DOW = {
     "pazar":6,
 }
 
-def _norm_tr(s: str) -> str:
-    return (s.lower()
-              .replace("ğ","g").replace("ü","u").replace("ş","s")
-              .replace("ı","i").replace("ö","o").replace("ç","c")
-              .strip())
+# def _norm_tr(s: str) -> str:
+#     return (s.lower()
+#               .replace("ğ","g").replace("ü","u").replace("ş","s")
+#               .replace("ı","i").replace("ö","o").replace("ç","c")
+#               .strip())
 
 def _next_weekday(start: date, target_wd: int) -> date:
     """start dahil olmayacak şekilde bir SONRAKİ target_wd gününü verir."""
@@ -1563,10 +1551,8 @@ _BAD_NAME_TOKS = {
     "gel","gelmek","gelirim","geliyorum","gitmek","gidecegim","gideceğim",
     "lütfen","lutfen","tesekkur","teşekkür",
     "gun","gün","saat","bugun","bugün","yarin","yarın",
-    "adres","konum","yer","sube","şube","klinik","kliniğe",
-    "kadikoy","kadıköy","kozyatagi","kozyatağı","mecidiyekoy","mecidiyeköy",
-    "bakirkoy","bakırköy","torun","center","incirli","caddesi","sokak","mahallesi",
-    "sahrayi","cedit","ataturk","atürk"
+    "adres","konum","yer","sube","şube","klinik","kliniğe"
+    
 }
 _BAD_NAME_TOKS = { _norm_tr(w) for w in _BAD_NAME_TOKS }
 
@@ -1980,7 +1966,7 @@ def load_all_docs():
 
 
 
-APP_NAME = "OdyoduyuChatbot"
+APP_NAME = "SailyaiChatbot"
 
 def app_data_dir() -> Path:
     base = Path(os.getenv("LOCALAPPDATA", Path.home()))
@@ -2025,14 +2011,14 @@ def set_vectordb(vs):
     VDB = vs
 
 FALLBACK_SYS = (
-    "Sen Odyoduyu isimli bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
+    "Sen Saily isimli bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
     "Yalnızca Türkçe konuş ve samimi ama ölçülü bir üslup kullan."
     
     "Elindeki bilgi kaynakları şunlardır:"
     "{context}"
     
     "Bu bağlam, şu başlıklardaki bilgileri içerebilir:"
-    "- Çalışma saatleri ve randevu bilgileri (embed klasörü: çalışma_saatleri)"
+    "- Çalışma saatleri ve randevu bilgileri (embed klasörü: Çalışma Saatleri)"
     "- Adres, şube, konum bilgileri (embed klasörü: konum)"
     "- Verilen hizmetler (embed klasörü: hizmetler)"
     "- Sık sorulan sorular (embed klasörü: faq)"
@@ -2302,9 +2288,9 @@ def _safe_llm(prompt: str) -> str:
 import re
 
 
-def _norm_tr(s: str) -> str:
-    # sende zaten vardır; yoksa basit normalize:
-    return (s or "").lower().replace("ş","s").replace("ı","i").replace("ğ","g").replace("ö","o").replace("ü","u").replace("ç","c")
+# def _norm_tr(s: str) -> str:
+#     # sende zaten vardır; yoksa basit normalize:
+#     return (s or "").lower().replace("ş","s").replace("ı","i").replace("ğ","g").replace("ö","o").replace("ü","u").replace("ç","c")
 
 _CHANGE_RE = re.compile(
     r"\b("
@@ -2416,7 +2402,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     """
     Randevu FSM + fiyat / bilgi / KVKK akışı + genel LLM akışı.
     """
-    import re
+   
     import uuid
     
     rid = f"{uuid.uuid4().hex[:8]}" 
@@ -2532,7 +2518,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
 
         return (
             "Teşekkürler, KVKK onayınız alındı. Lütfen Adınızı Soyadınızı ve Telefon Numaranızı örnekteki gibi yazar mısınız?\n"
-            "(Örn Ad Soyad ; 5xx xxxxxxx ; İlgilendiğiniz Hizmet)  (örneğin: İşitme Testi,İşitme Cihazı Denemesi,Genel Değerlendirme vb.)"
+            "(Örn Ad Soyad ; 5xx xxxxxxx ; İlgilendiğiniz Hizmet) "
         )
 
     # ADIM 3: Kullanıcı bilgi yazdı → slotları güncelle (zaten başta yaptık, sadece yeniden çekelim)
