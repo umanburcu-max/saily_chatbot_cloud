@@ -1,0 +1,193 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Widget Panel</title>
+
+<style>
+  :root { --border:#e5e7eb; --bg:#fff; --bot:#f7f7f8; --user:#e6f4ff; }
+  html,body{height:100%}
+  body{
+    margin:0;
+    height:100vh;                 /* tam görünüm yüksekliği */
+    display:flex;                 /* üstten alta esnek yerleşim */
+    flex-direction:column;
+    background:var(--bg);
+    font:14px/1.4 system-ui,Segoe UI,Roboto,Arial;
+    color:#111;
+  }
+  .top{ display:flex; justify-content:space-between; align-items:center; padding:8px 12px; }
+  .title {
+      color: red;           /* kırmızı */
+      font-weight: bold;    /* kalın */
+      text-align: left;     /* sola hizalı */
+    }
+   .brand { display:inline-flex; align-items:center; gap:8px; }
+    .brand-img { height:24px; width:auto; display:block; }
+    .brand-name { font-weight:700; color:#111; } /* istersen kırmızı: color:#e11; */
+      .close{
+        position:absolute; right:8px; top:8px; width:28px; height:28px;
+        display:inline-flex; align-items:center; justify-content:center;
+        border:0; border-radius:8px; background:transparent; cursor:pointer;
+      }
+      .close:hover{ background:#f2f2f2 }
+
+  /* Mesaj alanı kalan yüksekliği kaplar; form hep görünür */
+  .msgs{
+    flex:1;                 /* artakalan alanı kapla */
+    overflow:auto;
+    padding:12px;
+    min-height:0;           /* flex overflow için gerekli */
+  }
+  .msg{
+    max-width:85%;
+    margin:8px 0;
+    padding:10px 12px;
+    border-radius:12px;
+    white-space:pre-wrap;
+  }
+  .bot{background:var(--bot)}
+  .user{background:var(--user); margin-left:auto}
+
+  .bar{
+    flex-shrink:0;          /* alta sabit kalsın */
+    display:flex; gap:8px;
+    padding:10px;
+    border-top:1px solid var(--border);
+    background:var(--bg);
+  }
+  input{
+    flex:1;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+  }
+  button.send{
+    padding:10px 14px;
+    border:0;
+    border-radius:10px;
+    background:#2E86AB;
+    color:#fff;
+    cursor:pointer;
+  }
+</style>
+
+<div class="top">
+  <div class="brand">
+    <img src="./assets/logo.png" alt="Saily3" class="brand-img" />
+    <span class="brand-name">Saily</span>
+  </div>
+  <button id="close" class="close" aria-label="Kapat">✕</button>
+</div>
+
+<div class="msgs" id="msgs">
+  <div class="msg bot">Merhaba, ben Odyoduyu İşitme Merkezi'nde çalışan sanal temsilciyim. Adım SAILY! İşitme sorunlarıyla ilgili hizmetlerimiz hakkında bilgi verebilir, randevu talebinizi alabilirim. Size nasıl yardımcı olabilirim?</div>
+</div>
+
+<!-- ✅ KVKK Onay Kutusu -->
+<div id="kvkk-box" style="padding:10px; border-top:1px solid #e5e7eb;">
+  <input type="checkbox" id="kvkk_ok" />
+  <label for="kvkk_ok" style="font-size:13px; color:#444;">
+    <a href="https://siten.com/kvkk-aydinlatma-metni" target="_blank">
+      KVKK Aydınlatma Metni’ni
+    </a>
+    okudum ve kişisel verilerimin işlenmesini onaylıyorum.
+  </label>
+</div>
+
+<form class="bar" id="f">
+  <input id="t" placeholder="Mesaj yaz..." autocomplete="off" />
+  <button class="send">Gönder</button>
+</form>
+
+<script>
+  // 🔗 Proxy/Log katmanı
+  const API_BASE = new URLSearchParams(window.location.search).get("api");
+  const CHAT_URL = API_BASE + "/chat";
+
+  // Proxy için iç anahtar (upstream token DEĞİL!)
+  const INTERNAL_KEY = "nekoteruces4321dcba"; // .env / build-time enjekte et, koda gömmemeye çalış
+
+  const SESSION = (localStorage.getItem("saily_session")
+                  || ("web-" + Math.random().toString(36).slice(2)));
+  localStorage.setItem("saily_session", SESSION);
+
+  const msgs = document.getElementById('msgs');
+  const f = document.getElementById('f');
+  const t = document.getElementById('t');
+
+  function add(text, who){
+    const d=document.createElement('div');
+    d.className='msg '+(who||'bot');
+    d.textContent= text || '';
+    msgs.appendChild(d);
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+
+  async function send(text){
+    add(text,'user'); t.value='';
+
+    // basit "yazıyor..." göstergesi
+    const typing = document.createElement('div');
+    typing.className = 'msg bot';
+    typing.textContent = '...';
+    msgs.appendChild(typing); msgs.scrollTop = msgs.scrollHeight;
+
+    try{
+        // ✅ KVKK checkbox değerini burada al
+        const kvkk_ok = document.getElementById("kvkk_ok").checked;
+    
+        const r = await fetch(CHAT_URL, {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'X-Internal-Key': INTERNAL_KEY,
+          },
+          // ✅ Backend'e gönder
+          body: JSON.stringify({
+            session_id: SESSION,
+            message: text,
+            kvkk_ok: kvkk_ok
+          }),
+        });
+
+      // non-200’lerde anlamlı mesaj ver
+      if(!r.ok){
+        const body = await r.text();
+        typing.remove();
+        add(`Hata (${r.status}): ${body || r.statusText}`,'bot');
+        return;
+      }
+
+      const data = await r.json();
+      typing.remove();
+
+      // reply / text / message / output sırasıyla dene
+      const reply = (data && (data.reply || data.text || data.message || data.output)) || '(boş yanıt)';
+      add(reply,'bot');
+
+    }catch(e){
+      typing.remove();
+      add('Ağ hatası: '+ e,'bot');
+    }
+  }
+
+  f.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const v=t.value.trim();
+    if(v) send(v);
+  });
+
+  // ✕ kapatma güvenli ek: #close varsa
+  const closeBtn = document.getElementById('close');
+  function closeSelf(){
+    try { window.parent.postMessage({ type:'closeWidget' }, '*'); } catch(e){}
+    try {
+      const fe = window.frameElement;
+      if (fe && fe.parentElement) fe.parentElement.style.display = 'none';
+    } catch(e){}
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeSelf);
+  }
+  window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeSelf(); });
+</script>

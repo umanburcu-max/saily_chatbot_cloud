@@ -1,0 +1,14 @@
+Flask
+flask-cors
+pandas
+pypdf
+langchain-community
+tiktoken
+faiss-cpu
+fastapi
+uvicorn[standard]
+openai
+langchain_openai
+psycopg[binary]
+
+
