@@ -405,18 +405,18 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
         try:
             doc = booking.create_lead(
                 lead_validity="Geçerli",
-                lead_statu="ATAMA BEKLİYOR",
+                lead_statu="RANDEVU VERİLDİ",
                 source_group="Dijital Pazarlama",
-                main_source="Sanal Asistan",
-                sub_source="Chatbot",
-                language=crm_language,
-                country=crm_country,
-                main_services=service or "Belirsiz",
-                sub_services=service or "Belirsiz",
-                full_name=full_name,
+                main_source="Website",   # alan adı sizin API’nize göre
+                sub_source="Website",
+                language="Türkçe",
+                country="Türkiye",
+                main_services="Belirsiz",
+                sub_services="",
+                full_name=full_name ,
                 phone=phone,
                 squad="Yurt İçi",
-                advertisement_message="Sanal Asistan tarafından üretildi"
+                advertisement_message="Sanal Asistan tarafından üretildi",
             )
             log("[ensure_crm_lead][create_lead] doc =", doc)
     
