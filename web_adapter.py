@@ -42,7 +42,7 @@ ALLOWED_ORIGINS = [
     "https://api-saily.com",
     "https://sailyai.com",
     "https://chat.api.sailyai.com"
-    "https://wwww.odyoduyu.com/saily"
+    "https://wwww.odyoduyu.com"
     # "https://www.senin-site.com",
 ]
 app.add_middleware(
