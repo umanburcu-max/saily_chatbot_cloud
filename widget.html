@@ -101,7 +101,9 @@
 
 <script>
   // 🔗 Proxy/Log katmanı
-  const API_BASE = new URLSearchParams(window.location.search).get("api");
+  
+  const params = new URLSearchParams(window.location.search);
+  const API_BASE = params.get("api") || "https://chat.api.sailyai.com";
   const CHAT_URL = API_BASE + "/chat";
 
   // Proxy için iç anahtar (upstream token DEĞİL!)
