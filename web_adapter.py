@@ -41,7 +41,8 @@ ALLOWED_ORIGINS = [
     "http://localhost:5500",
     "https://api-saily.com",
     "https://sailyai.com",
-    "https://chatlog.api-saily.com"
+    "https://chat.api.sailyai.com"
+    "https://wwww.odyoduyu.com/saily"
     # "https://www.senin-site.com",
 ]
 app.add_middleware(
