@@ -1035,21 +1035,30 @@ def get_slots(sid: str):
     )
 
 
-def set_slots(sid: str, **kwargs):
+def set_slots(sid: str, clear: bool = False, **kwargs):
     slots = get_slots(sid)
     before = dict(slots)  # debug için
+
     for k, v in kwargs.items():
-        # Değer yoksa veya boş string ise ÖNCEKİNİ SİLME
+        if clear:
+            # ✅ clear modunda None dahil yaz (temizleme)
+            slots[k] = v
+            continue
+
+        # Normal mod: Değer yoksa veya boş string ise ÖNCEKİNİ SİLME
         if v is None:
             continue
         if isinstance(v, str) and not v.strip():
             continue
-        # (telefon zaten extract_phone ile normalize edilmiş geliyor)
         slots[k] = v
+
     log(f"[SLOTS] update sid={sid} before={before} after={slots}")
     return slots
 
-
+def clear_identity_slots(sid: str):
+    set_slots(sid, clear=True, name=None, phone=None, service=None)
+    
+    
 # ---------------- [2] PHONE PARSING ----------------
 _PHONE_RE = re.compile(
     r'(?:\+?\s*90\s*|\b0\s*)?\s*\(?\s*(5\d{2}|\d{3,4})\s*\)?[\s\-.]*\d{3}[\s\-.]*\d{2}[\s\-.]*\d{2}\b'
@@ -2417,6 +2426,8 @@ def _safe2(ret, fallback_reply="Bir şeyler ters gitti. Lütfen tekrar dener mis
     return fallback_reply, (Ctx() if 'Ctx' in globals() else None)
 
 
+
+
 def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     """
     Randevu FSM + fiyat / bilgi / KVKK akışı + genel LLM akışı.
@@ -2604,6 +2615,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             session_id=sid,
         )
         log("[answer][ensure_crm_lead_from_chat][with_service] res =", res)
+        clear_identity_slots(sid)  
 
         if res.get("lead") and res.get("reason") == "ok":
             return (
@@ -2638,6 +2650,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             session_id=sid,
         )
         log("[answer][ensure_crm_lead_from_chat][no_service] res =", res)
+        clear_identity_slots(sid) 
 
         # Fiyat / genel bilgi için mesaj
         if res.get("lead") and res.get("reason") == "ok":
@@ -2657,7 +2670,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
 
-        name = None
+        
     # --- Normal LLM / RAG akışı ---
     log(f"[REQ] rid={rid} q='{question[:80]}'")
     ctx_text = build_context(question, rid=rid)
