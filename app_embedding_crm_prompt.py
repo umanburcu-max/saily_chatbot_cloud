@@ -2542,7 +2542,12 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             "kişisel verilerinizin işlenmesini onayladığınızı belirtmeniz gerekiyor. \n"
             "Lütfen kutucuğu işaretleyerek onay verin ve ardından **“Onayladım”** diye yazın."
         )
-
+    
+    if is_rdv_intent(tnorm) and kvkk_ok:
+        meta["pending_rdv_after_kvkk"] = True
+        ctx.meta = meta
+        SESS[sid] = ctx
+        
     # Kimlik tekrar kontrol
     needs_identity = not identity_complete(ctx)
 
