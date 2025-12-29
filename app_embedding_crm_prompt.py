@@ -2274,7 +2274,7 @@ def is_rdv_intent(text: str) -> bool:
 
 def is_approvement(text: str) -> bool:
     t = (text or "").lower().strip()
-    log("is_approvement içinde")
+    log("is_approvement içinde", "text:", t)
     return (
         "Onayladım" in t or "Onay" in t or "Onayladim" in t or "Approve" in t or "rendevu" in t  
     )
@@ -2679,7 +2679,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
 
-    log("approvement öncesi")
+    log("approvement öncesi", reply.lower().strip())
     
     if "Onayladım" in reply.lower().strip():
         ctx = SESS.get(sid) or Ctx()
