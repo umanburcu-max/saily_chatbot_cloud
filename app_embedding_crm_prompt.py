@@ -2272,7 +2272,12 @@ def is_rdv_intent(text: str) -> bool:
         t in CONFIRM_WORDS or t in CANCEL_ONLY_KEYWORDS or t in RESCHEDULE_ONLY_KEYWORDS
     )
 
-
+def is_approvement(text: str) -> bool:
+    t = (text or "").lower().strip()
+    log("is_approvement içinde")
+    return (
+        "Onayladım" in t or "Onay" in t or "Onayladim" in t or "Approve" in t or "rendevu" in t  
+    )
 
 
 def _within(h, mi, start=(9,0), end=(18,0)):
@@ -2458,7 +2463,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     except Exception:
         pass
     
-    approvement_like = ("Onayladım","Onayladim","Onay","Approve" in question)
+    approvement_like = is_approvement(question)
     
     
     # Eğer daha önce "Ad Soyad ; Telefon ..." cevabı verildiyse
@@ -2675,7 +2680,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
 
     log("approvement öncesi")
-    if "Onayladım" in reply:
+    
+    if "Onayladım" in reply.lower().strip():
         ctx = SESS.get(sid) or Ctx()
         meta = getattr(ctx, "meta", {}) or {}
         meta["force_wait_approvement"] = True
