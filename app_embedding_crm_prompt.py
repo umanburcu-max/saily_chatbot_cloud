@@ -2276,7 +2276,7 @@ def is_approvement(text: str) -> bool:
     t = (text or "").lower().strip()
     log("is_approvement içinde", "text:", t)
     return (
-        "Onayladım" in t or "Onay" in t or "Onayladim" in t or "Approve" in t or "rendevu" in t  
+        "onayladım" in t or "onay" in t or "onayladim" in t or "approve" in t  
     )
 
 
@@ -2485,7 +2485,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             return (
                 "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
                 "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
-                "Adınızı, Soyadınızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                "Adınızı, Soyadınızı, Telefon numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
                 " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
             )
     
@@ -2503,7 +2503,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             return (
                 "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
                 "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
-                "Adınızı, Soyadınızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                "Adınızı, Soyadınızı, Telefon numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
                 " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
             )
     
@@ -2543,11 +2543,14 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         meta["pending_rdv_after_kvkk"] = True
         ctx.meta = meta
         SESS[sid] = ctx
+        meta["force_wait_approvement"] = True
+        log("[FORCE_WAIT_APPROVEMENT]")
         return (
             "Randevu oluşturabilmemiz için KVKK Aydınlatma Metni’ni okuduğunuzu ve \n"
             "kişisel verilerinizin işlenmesini onayladığınızı belirtmeniz gerekiyor. \n"
             "Lütfen kutucuğu işaretleyerek onay verin ve ardından **“Onayladım”** diye yazın."
         )
+     
     
     if is_rdv_intent(tnorm) and kvkk_ok:
         meta["pending_rdv_after_kvkk"] = True
@@ -2562,9 +2565,10 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         meta["pending_rdv_after_kvkk"] = False  # flag reset
         ctx.meta = meta
         SESS[sid] = ctx
-
+        meta["force_wait_contact"] = True
+        log("[FORCE_WAIT_CONTACT]")
         return (
-            "Teşekkürler, KVKK onayınız alındı. Lütfen Adınızı Soyadınızı ve Telefon Numaranızı örnekteki gibi yazar mısınız?\n"
+            "Teşekkürler, KVKK onayınız alındı. Lütfen Adınızı Soyadınızı, Telefon Numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n"
             "(Örn Ad Soyad ; 5xx xxxxxxx ; İlgilendiğiniz Hizmet)  (örneğin: İşitme Testi,İşitme Cihazı Denemesi,Genel Değerlendirme vb.)"
         )
 
@@ -2671,23 +2675,14 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     # --- FORCE_WAIT_CONTACT BAYRAĞINI LLM CEVABINA GÖRE AYARLA ---
     # Eğer LLM, fiyat/bağlam dışı durumda "Ad Soyad ; Telefon paylaşırsanız..." içeren bir cevap verdiyse
     # bir sonraki mesajda yalnızca iletişim bilgisi bekle.
-    if "Adınızı, Soyadınızı ve Telefon numaranızı" in reply:
-        ctx = SESS.get(sid) or Ctx()
-        meta = getattr(ctx, "meta", {}) or {}
-        meta["force_wait_contact"] = True
-        ctx.meta = meta
-        SESS[sid] = ctx
-        log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
+    # if "Adınızı, Soyadınızı ve Telefon numaranızı" in reply:
+    #     ctx = SESS.get(sid) or Ctx()
+    #     meta = getattr(ctx, "meta", {}) or {}
+    #     meta["force_wait_contact"] = True
+    #     ctx.meta = meta
+    #     SESS[sid] = ctx
+    #     log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
 
-    log("approvement öncesi", reply.lower().strip())
-    
-    if "Onayladım" in reply.lower().strip():
-        ctx = SESS.get(sid) or Ctx()
-        meta = getattr(ctx, "meta", {}) or {}
-        meta["force_wait_approvement"] = True
-        ctx.meta = meta
-        SESS[sid] = ctx
-        log("[FORCE_WAIT_APPROVEMENT] set to True due to LLM reply")
 
     # --- Konuşma geçmişini güncelle ---
     h = get_history(sid)
