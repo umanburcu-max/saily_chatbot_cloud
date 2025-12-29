@@ -2489,7 +2489,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         ctx.meta = meta
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] contact info received WITH KVKK, resuming normal flow")
-
+    
+    log("force:", force_wait_approvement, "approvement_like:", approvement_like)
     if force_wait_approvement and approvement_like:
         # 1) KVKK YOKSA: BİLGİYİ ALMA, UYAR
         if not kvkk_ok:
@@ -2673,6 +2674,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
 
+    log("approvement öncesi")
     if "Onayladım" in reply:
         ctx = SESS.get(sid) or Ctx()
         meta = getattr(ctx, "meta", {}) or {}
