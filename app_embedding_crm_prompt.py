@@ -2448,6 +2448,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     # ---- META / FORCE-WAIT KONTROLÜ ----
     meta = getattr(ctx, "meta", {}) or {}
     force_wait_contact = bool(meta.get("force_wait_contact", False))
+    force_wait_approvement = bool(meta.get("force_wait_approvement", False))
     
     # Kullanıcı gerçekten iletişim bilgisi veriyor mu?
     contact_like = (";" in question)
@@ -2457,14 +2458,17 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     except Exception:
         pass
     
+    approvement_like = ("Onayladım","Onayladim","Onay","Approve" in question)
+    
+    
     # Eğer daha önce "Ad Soyad ; Telefon ..." cevabı verildiyse
     # ve hâlâ iletişim bilgisi gelmediyse → aynı mesaja yönlendir.
     if force_wait_contact and not contact_like:
         log("[FORCE_WAIT_CONTACT] still waiting for contact info")
         return (
             # "KVKK Aydınlatma Metni’ni okuduğunuzu ve onayladığınızı belirten,\n"
-            "KVKK kutusunu işaretleyip, Ad Soyad ; Telefon \n "
-            "bilgilerinizi örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), \n" 
+            "KVKK kutusunu işaretleyip, Adınızı, Soyadınızı ve Telefon numaranızı \n "
+            "örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), \n" 
             "müşteri temsilcimiz en kısa sürede size dönüş sağlayacaktır."
         )
     
@@ -2476,7 +2480,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             return (
                 "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
                 "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
-                "Ad Soyad ; Telefon ; (ve varsa hizmet) formatında tekrar yazar mısınız?"
+                "Adınızı, Soyadınızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
             )
     
         # 2) KVKK VARSA: bayrağı kapat, normal akışa devam et
@@ -2484,6 +2489,23 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         ctx.meta = meta
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] contact info received WITH KVKK, resuming normal flow")
+
+    if force_wait_approvement and approvement_like:
+        # 1) KVKK YOKSA: BİLGİYİ ALMA, UYAR
+        if not kvkk_ok:
+            log("[FORCE_WAIT_APPROVEMENT] approvement-like but no KVKK")
+            return (
+                "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
+                "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
+                "Adınızı, Soyadınızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
+            )
+    
+        # 2) KVKK VARSA: bayrağı kapat, normal akışa devam et
+        meta["force_wait_approvement"] = False
+        ctx.meta = meta
+        SESS[sid] = ctx
+        log("[FORCE_WAIT_APPROVEMENT] approvement info received WITH KVKK, resuming normal flow") 
 
 
     # Küçük yardımcı
@@ -2583,7 +2605,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
                 f"'{service}' ile ilgili talebinizi aldım ancak sistemimizde kayıt oluştururken teknik bir sorun yaşandı. "
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
-
+        name = None
     # ----------------------------------------------------
     # 2) SADECE AD + TELEFON VAR (service yok) → 
     #    'Üzgünüm...' ve fiyat senaryoları için LEAD
@@ -2620,7 +2642,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
 
-
+        name = None
     # --- Normal LLM / RAG akışı ---
     log(f"[REQ] rid={rid} q='{question[:80]}'")
     ctx_text = build_context(question, rid=rid)
@@ -2638,13 +2660,21 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     # --- FORCE_WAIT_CONTACT BAYRAĞINI LLM CEVABINA GÖRE AYARLA ---
     # Eğer LLM, fiyat/bağlam dışı durumda "Ad Soyad ; Telefon paylaşırsanız..." içeren bir cevap verdiyse
     # bir sonraki mesajda yalnızca iletişim bilgisi bekle.
-    if "Ad Soyad ; Telefon paylaşırsanız" in reply:
+    if "Adınızı, Soyadınızı ve Telefon numaranızı" in reply:
         ctx = SESS.get(sid) or Ctx()
         meta = getattr(ctx, "meta", {}) or {}
         meta["force_wait_contact"] = True
         ctx.meta = meta
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
+
+    if "Onayladım" in reply:
+        ctx = SESS.get(sid) or Ctx()
+        meta = getattr(ctx, "meta", {}) or {}
+        meta["force_wait_approvement"] = True
+        ctx.meta = meta
+        SESS[sid] = ctx
+        log("[FORCE_WAIT_APPROVEMENT] set to True due to LLM reply")
 
     # --- Konuşma geçmişini güncelle ---
     h = get_history(sid)
