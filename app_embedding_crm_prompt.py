@@ -2616,6 +2616,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         )
         log("[answer][ensure_crm_lead_from_chat][with_service] res =", res)
         clear_identity_slots(sid)  
+        meta["pending_rdv_after_kvkk"] = False
 
         if res.get("lead") and res.get("reason") == "ok":
             return (
@@ -2651,6 +2652,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         )
         log("[answer][ensure_crm_lead_from_chat][no_service] res =", res)
         clear_identity_slots(sid) 
+        meta["pending_rdv_after_kvkk"] = False
 
         # Fiyat / genel bilgi için mesaj
         if res.get("lead") and res.get("reason") == "ok":
