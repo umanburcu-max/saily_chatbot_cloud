@@ -8,3 +8,4 @@ faiss-cpu
 fastapi
 uvicorn[standard]
 beautifulsoup4
+psycopg[binary]
