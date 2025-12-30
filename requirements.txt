@@ -7,5 +7,6 @@ tiktoken
 faiss-cpu
 fastapi
 uvicorn[standard]
-beautifulsoup4
+openai
+langchain_openai
 psycopg[binary]
