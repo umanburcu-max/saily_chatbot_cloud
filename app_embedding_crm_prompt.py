@@ -2084,7 +2084,20 @@ def init_prompt_and_llm():
     LLM = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=openai_api_key)
     
 
-
+def _norm_score(x):
+    if x is None:
+        return None
+    try:
+        x = float(x)
+    except Exception:
+        return None
+    # 0..1 ise dokunma
+    if 0.0 <= x <= 1.0:
+        return x
+    # -1..1 ise normalize et
+    if -1.0 <= x < 0.0:
+        return (x + 1.0) / 2.0
+    return x
 
 
 def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_chars: int = 6000, rid: str | None = None) -> str:
@@ -2101,6 +2114,18 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
         "işitme testi", "denge", "vestibüler"
     ])
     is_faqy = any(w in ql for w in ["sıkça", "sss", "faq", "nasıl", "nedir", "ücret", "fiyat"])
+    # RDV bilgi sorusu / aksiyon ayrımı (FAQ sıralaması için)
+    is_rdv_info = any(p in ql for p in RDV_INFO_PHRASES)
+    
+    # "aksiyon" basit heuristik (build_context için yeterli)
+    is_rdv_action = (
+        any(p in ql for p in RDV_ACTION_PHRASES)
+        or any(w in ql for w in WEEKDAY_WORDS)
+        or bool(TIME_RE.search(ql))
+        or (ql.strip() in CONFIRM_WORDS)
+        or (ql.strip() in CANCEL_ONLY_KEYWORDS)
+        or (ql.strip() in RESCHEDULE_ONLY_KEYWORDS)
+    )
     
     import uuid
     if not rid:
@@ -2132,7 +2157,7 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
         for d, raw in sim_hits:
             s = raw
             if s is not None and -1.0 <= s <= 1.0:
-                s = (s + 1.0) / 2.0
+                s = _norm_score(s)
             did = doc_id_of(d)
             if did:
                 sim_map[did] = s if s is not None else 1.0
@@ -2183,7 +2208,7 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
     for doc, raw in hits:
         s = 1.0 if raw is None else raw
         if s is not None and -1.0 <= s <= 1.0:
-            s = (s + 1.0) / 2.0
+            s = s = _norm_score(s)
         s = s if s is not None else 1.0
 
         src_l = src_of(doc).lower()
@@ -2197,8 +2222,16 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
             boost += 0.35
 
         # randevu/konum/hizmet odaklı sorularda faq'yı biraz frenle
-        if (is_rdv or is_loc or is_srv) and ("faq" in src_l):
+        # if (is_rdv or is_loc or is_srv) and ("faq" in src_l):
+        #     boost -= 0.15
+        # sadece "aksiyon" randevuda (veya loc/srv) faq'yi frenle
+        if (is_rdv_action or is_loc or is_srv) and ("faq" in src_l):
             boost -= 0.15
+        
+        # randevu bilgi sorularında faq'yi destekle
+        if is_rdv_info and ("faq" in src_l):
+            boost += 0.10
+
         # saf FAQ tarzı soruda faq'ya küçük artı
         if is_faqy and ("faq" in src_l):
             boost += 0.05
@@ -2217,9 +2250,9 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
 
     # Öncelikli kaynaklar (varsa önce)
     priority_wants = []
-    if is_rdv: priority_wants += ["çalışma saatleri.txt", "personel.txt"]
-    if is_loc: priority_wants += ["konum.txt"]
-    if is_srv: priority_wants += ["hizmetler.txt"]            # ⬅️ yeni
+    if is_rdv: priority_wants += ["çalışma saatleri.txt"]
+    if is_loc: priority_wants += ["iletişim.txt"]
+    if is_srv: priority_wants += ["hizmetler.txt", "şube_hizmet_eşleşmesi"]            # ⬅️ yeni
 
     all_keys = list(buckets.keys())
     prios = []
@@ -2265,6 +2298,78 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
 
 
 
+# --- RDV ayrıştırma: bilgi sorusu vs aksiyon ---
+RDV_INFO_PHRASES = [
+    "randevusuz",
+    "rendavusuz"
+    "randevu almadan",
+    "rdv almadan"
+    "randevu gerekli mi",
+    "rdv gerekli mi"
+    "randevu gerekiyor mu",
+    "rdv gerek"
+    "randevu şart mı",
+    "rdv şart"
+    "randevu zorunlu mu",
+    "rdv zorunlu"
+    "randevu olmadan",
+    "rdv olmadan"
+    "randevu sistemi var mı",
+    "rdv sistemi"
+    "randevu ile mi",
+    "randevuyla"
+    "rdv ile"
+    "randevu lazım mı",
+    "rdv şart",
+    "randevu onayı",
+    "randevu aktarımı",
+]
+
+RDV_ACTION_PHRASES = [
+    "randevu al",
+    "rendavu al"
+    "randevu almak",
+    "rdv almak"
+    "randevu oluştur",
+    "rdv oluştur"
+    "randevu oluşturmak",
+    "randevu ayarla",
+    "rdv ayarla"
+    "randevu ayarlamak",
+    "randevu istiyorum"
+    "rdv istiyorum"
+    "randevu talep",
+    "rdv talep"
+    "rezervasyon yap",
+    "rezervasyon yapmak",
+    "rdv al",
+]
+
+def is_rdv_info_question(text: str) -> bool:
+    t = (text or "").lower().strip()
+    return any(p in t for p in RDV_INFO_PHRASES)
+
+def is_rdv_action_intent(text: str) -> bool:
+    t = (text or "").lower().strip()
+
+    # 1) Bilgi sorusuysa aksiyon değildir
+    if is_rdv_info_question(t):
+        return False
+
+    # 2) Açık aksiyon kalıpları
+    if any(p in t for p in RDV_ACTION_PHRASES):
+        return True
+
+    # 3) Tarih/saat/gün/confirm/cancel/reschedule gibi akış tetikleyicileri
+    if any(w in t for w in WEEKDAY_WORDS):
+        return True
+    if bool(TIME_RE.search(t)):
+        return True
+    if t in CONFIRM_WORDS or t in CANCEL_ONLY_KEYWORDS or t in RESCHEDULE_ONLY_KEYWORDS:
+        return True
+
+    # 4) Sadece "randevu" kelimesi geçmesi artık YETMEZ
+    return False
 
 
 
@@ -2550,7 +2655,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     pending = meta.get("pending_rdv_after_kvkk", False)
 
     # ADIM 1: Randevu isteği + KVKK yok → KVKK iste
-    if is_rdv_intent(tnorm) and not kvkk_ok:
+    if is_rdv_action_intent(tnorm) and not kvkk_ok:
         meta["pending_rdv_after_kvkk"] = True
         ctx.meta = meta
         SESS[sid] = ctx
@@ -2563,7 +2668,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         )
      
     
-    if is_rdv_intent(tnorm) and kvkk_ok:
+    if is_rdv_action_intent(tnorm) and kvkk_ok:
         meta["pending_rdv_after_kvkk"] = True
         ctx.meta = meta
         SESS[sid] = ctx
