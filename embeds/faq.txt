@@ -1,5 +1,5 @@
 SORU,CEVAP
-"Referans alabileceğimiz web siteleriniz nelerdir?","https://www.odyoduyu.com/"
+"Referans alabileceğimiz web siteleriniz nelerdir?","https://www.saily.com/"
 "Randevuyu iptal etmek istersem ne yapmalıyım?","Bizimle telefon ile İletişime geçerek Randevunuzu iptal edebilirsiniz. Şube iletişim bilgileri paylaşılabilir."
 "Randevumu erteleyebilir miyim?","Bizimle telefon ile İletişime geçerek Randevunuzu erteleyebilirsiniz. Şube iletişim bilgileri paylaşılabilir."
 Aynı gün içinde randevu almak mümkün mü?,	Evet.								
@@ -61,3 +61,4 @@ Yetkili bayi olduğunuzu nasıl anlarım?,	İşitme cihazı markalarının web s
 “Doktorum ne önerir?”,"KVKK kutusunu işaretleyip, Ad Soyad ; Telefon bilgilerinizi örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), müşteri temsilcimiz en kısa sürede size dönüş sağlayacaktır."
 “Hangi ses frekansında işitme kaybım var?”,"KVKK kutusunu işaretleyip, Ad Soyad ; Telefon bilgilerinizi örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), müşteri temsilcimiz en kısa sürede size dönüş sağlayacaktır."
 “Evde kendi testimi nasıl yaparım?”,"KVKK kutusunu işaretleyip, Ad Soyad ; Telefon bilgilerinizi örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), müşteri temsilcimiz en kısa sürede size dönüş sağlayacaktır."
+
