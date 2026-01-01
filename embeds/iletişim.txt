@@ -1,0 +1,3 @@
+ŞUBE,KONUM,HARİTA,TELEFON,WHATSAPP
+Odyoduyu Bakırköy,Kartaltepe, İncirli Cd. No:72C Bakırköy İstanbul,https://maps.app.goo.gl/XMdcTjSpr1KTG3ef9,0212 565 30 08,0 555 083 81 21
+Odyoduyu Göztepe,Fahrettin Kerim Gökay Cad. No:158/3 Göztepe/Kadıköy İstanbul,https://maps.app.goo.gl/EN8UZjN6bV2SXj817,0216 565 30 08,0 552 371 46 48

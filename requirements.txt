@@ -10,5 +10,3 @@ uvicorn[standard]
 openai
 langchain_openai
 psycopg[binary]
-
-

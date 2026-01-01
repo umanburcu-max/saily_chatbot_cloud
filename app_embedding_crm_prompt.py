@@ -28,7 +28,20 @@ import uuid
 
 
 
+# === Embedded API key (basit gizleme) ===
+# import base64
 
+# Buraya kendi key'inin base64 karşılığını koy (örnek: "c2st...==")
+# Komutla üret:  >>> import base64; base64.b64encode(b"sk-...").decode()
+# _ENC_KEY = "c2stcHJvai1ValF3c0RYamNySjhVZXFtSHI3NVlvU3lkM0ZaUVUtYUtzZTZ0SnRlYkVLeTVHcXhQOHgzM0xqUXNTTkowWUQtdnl4eDJFUlFvSFQzQmxia0ZKcVBlXzNFeTdXYmt4X1E2TXczM3VRU21EU1Bqam4xTkxRT3hPYW83NG1PcnM4LXFTVmpXSE9OdWtxWWdMUmdGaE9QTVE1enp4WUE="
+
+# def get_api_key() -> str:
+#     try:
+#         return base64.b64decode(_ENC_KEY).decode("utf-8")
+#     except Exception:
+#         # Her ihtimale karşı boş dönmesin
+#         return ""
+# ========================================
 
 
 for h in logging.root.handlers[:]:
@@ -238,8 +251,8 @@ def _bundle_root():
 
 def _user_appdata():
     home = os.path.expanduser("~")
-    return os.path.join(home, "AppData", "Local", "SailyaiChatbot") if platform.system() == "Windows" \
-           else os.path.join(home, ".sailyai_chatbot")
+    return os.path.join(home, "AppData", "Local", "OdyoduyuChatbot") if platform.system() == "Windows" \
+           else os.path.join(home, ".odyoduyu_chatbot")
 
 # Kökler
 APPDATA_DIR = _user_appdata()
@@ -251,7 +264,7 @@ EMBED_DIR_LCL = os.path.join(APPDATA_DIR, "embeds")
 URLS_DIR_LCL  = os.path.join(APPDATA_DIR, "embeds_urls")
 VSTORE_DIR    = os.path.join(APPDATA_DIR, "vectorstore")
 #LOGFILE       = os.path.join(APPDATA_DIR, "app.log")
-LOG_DIR = "/root/.sailyai_chatbot"
+LOG_DIR = "/root/.odyoduyu_chatbot"
 LOGFILE = os.path.join(LOG_DIR, "app.log")
 
 # Klasör yoksa oluştur
@@ -287,10 +300,10 @@ if _meipass and _meipass not in sys.path:
 try:
   from mvp_agentic_appointments import (
       Ctx,
-#      GenericCRMAdapterInMemory,
-#      GenericCRMAdapterHTTP,
-      make_crm_adapter
-#      run_planner, on_user_select_slot, on_user_confirm, on_user_reject, on_user_cancel
+      GenericCRMAdapterInMemory,
+      GenericCRMAdapterHTTP,
+      make_crm_adapter,
+      run_planner, on_user_select_slot, on_user_confirm, on_user_reject, on_user_cancel
   )
 except ModuleNotFoundError:
     raise
@@ -392,18 +405,18 @@ def ensure_crm_lead_from_chat(full_name, phone, service=None, language=None, ses
         try:
             doc = booking.create_lead(
                 lead_validity="Geçerli",
-                lead_statu="ATAMA BEKLİYOR",
+                lead_statu="RANDEVU VERİLDİ",
                 source_group="Dijital Pazarlama",
-                main_source="Sanal Asistan",
-                sub_source="Chatbot",
-                language=crm_language,
-                country=crm_country,
-                main_services=service or "Belirsiz",
-                sub_services=service or "Belirsiz",
-                full_name=full_name,
+                main_source="Website",   # alan adı sizin API’nize göre
+                sub_source="Website",
+                language="Türkçe",
+                country="Türkiye",
+                main_services="Belirsiz",
+                sub_services="",
+                full_name=full_name ,
                 phone=phone,
                 squad="Yurt İçi",
-                advertisement_message="Sanal Asistan tarafından üretildi"
+                advertisement_message="Sanal Asistan tarafından üretildi",
             )
             log("[ensure_crm_lead][create_lead] doc =", doc)
     
@@ -448,25 +461,25 @@ WEEKDAY_WORDS = (
     "bugün","yarın","öbür","hafta","gün","saat"
 )
 
-# import re
+import re
 
-# # Şube isimleri → resourceId eşlemesi (örnek)
-# BRANCHES = {
-#     "kozyatağı": 1,
-#     "bakırköy": 2,
-#     "göztepe": 3,
-#     "şişli torun center": 4,
-# }
-# DEFAULT_BRANCH = "kozyatağı"  # tek şube varsa buna sabitleyebilirsin
+# Şube isimleri → resourceId eşlemesi (örnek)
+BRANCHES = {
+    "kozyatağı": 1,
+    "bakırköy": 2,
+    "göztepe": 3,
+    "şişli torun center": 4,
+}
+DEFAULT_BRANCH = "kozyatağı"  # tek şube varsa buna sabitleyebilirsin
 
-# # "hangi şube?" sorusunu ve şube adını yakalama
-# BRANCH_Q_RE = re.compile(r"(hangi\s+şub(e|ede|eye)|hangi\s+lokasyon|nerede)", re.I)
-# def detect_branch_name(t: str):
-#     t = t.lower()
-#     for name in BRANCHES.keys():
-#         if name in t:
-#             return name
-#     return None
+# "hangi şube?" sorusunu ve şube adını yakalama
+BRANCH_Q_RE = re.compile(r"(hangi\s+şub(e|ede|eye)|hangi\s+lokasyon|nerede)", re.I)
+def detect_branch_name(t: str):
+    t = t.lower()
+    for name in BRANCHES.keys():
+        if name in t:
+            return name
+    return None
 
 # Telefon (5XX XXXXXXX) yakalama
 
@@ -728,25 +741,25 @@ def normalize_tr(s: str) -> str:
     return s.lower().strip()
 
 # Olumlu tetikleyiciler (geniş tutuldu; dilediğin gibi düzenleyebilirsin)
-# AFFIRM_KEYWORDS = {
-#     "olur","tamam","istiyorum","isterim","alabilirim","alayim","alayım",
-#     "ok","okey","evet","uygun","randevu al","randevu alalim","randevu alalım","ayarla"
-# }
+AFFIRM_KEYWORDS = {
+    "olur","tamam","istiyorum","isterim","alabilirim","alayim","alayım",
+    "ok","okey","evet","uygun","randevu al","randevu alalim","randevu alalım","ayarla"
+}
 
-# # (Opsiyonel) açık olumsuzlar — yanlış tetiklemeyi önler
-# NEGATIVE_KEYWORDS = {
-#     "hayir","hayır","istemiyorum","vazgec","vazgeç","vazgeciyorum","iptal","olmaz","yok"
-# }
+# (Opsiyonel) açık olumsuzlar — yanlış tetiklemeyi önler
+NEGATIVE_KEYWORDS = {
+    "hayir","hayır","istemiyorum","vazgec","vazgeç","vazgeciyorum","iptal","olmaz","yok"
+}
 
-# def is_affirmative_freeform(text: str) -> bool:
-#     t = normalize_tr(text)
-#     # kelime/ibare içerme kontrolü
-#     if any(k in t for k in AFFIRM_KEYWORDS):
-#         # "istemiyorum" gibi olumsuz ifadeler varsa tetikleme
-#         if any(n in t for n in NEGATIVE_KEYWORDS):
-#             return False
-#         return True
-#     return False
+def is_affirmative_freeform(text: str) -> bool:
+    t = normalize_tr(text)
+    # kelime/ibare içerme kontrolü
+    if any(k in t for k in AFFIRM_KEYWORDS):
+        # "istemiyorum" gibi olumsuz ifadeler varsa tetikleme
+        if any(n in t for n in NEGATIVE_KEYWORDS):
+            return False
+        return True
+    return False
 
 # --- Safe logging (UTF-8) ---
 
@@ -1022,21 +1035,30 @@ def get_slots(sid: str):
     )
 
 
-def set_slots(sid: str, **kwargs):
+def set_slots(sid: str, clear: bool = False, **kwargs):
     slots = get_slots(sid)
     before = dict(slots)  # debug için
+
     for k, v in kwargs.items():
-        # Değer yoksa veya boş string ise ÖNCEKİNİ SİLME
+        if clear:
+            # ✅ clear modunda None dahil yaz (temizleme)
+            slots[k] = v
+            continue
+
+        # Normal mod: Değer yoksa veya boş string ise ÖNCEKİNİ SİLME
         if v is None:
             continue
         if isinstance(v, str) and not v.strip():
             continue
-        # (telefon zaten extract_phone ile normalize edilmiş geliyor)
         slots[k] = v
+
     log(f"[SLOTS] update sid={sid} before={before} after={slots}")
     return slots
 
-
+def clear_identity_slots(sid: str):
+    set_slots(sid, clear=True, name=None, phone=None, service=None)
+    
+    
 # ---------------- [2] PHONE PARSING ----------------
 _PHONE_RE = re.compile(
     r'(?:\+?\s*90\s*|\b0\s*)?\s*\(?\s*(5\d{2}|\d{3,4})\s*\)?[\s\-.]*\d{3}[\s\-.]*\d{2}[\s\-.]*\d{2}\b'
@@ -1262,7 +1284,6 @@ def update_slots_from_text(sid: str, user_text: str):
             r"ses terapisi": "Ses Terapisi",
         }
 
-        
         for pattern, label in SERVICE_MAP.items():
             if re.search(pattern, txt_clean):
                 merged["service"] = label
@@ -1350,11 +1371,11 @@ TR_DOW = {
     "pazar":6,
 }
 
-# def _norm_tr(s: str) -> str:
-#     return (s.lower()
-#               .replace("ğ","g").replace("ü","u").replace("ş","s")
-#               .replace("ı","i").replace("ö","o").replace("ç","c")
-#               .strip())
+def _norm_tr(s: str) -> str:
+    return (s.lower()
+              .replace("ğ","g").replace("ü","u").replace("ş","s")
+              .replace("ı","i").replace("ö","o").replace("ç","c")
+              .strip())
 
 def _next_weekday(start: date, target_wd: int) -> date:
     """start dahil olmayacak şekilde bir SONRAKİ target_wd gününü verir."""
@@ -1551,8 +1572,10 @@ _BAD_NAME_TOKS = {
     "gel","gelmek","gelirim","geliyorum","gitmek","gidecegim","gideceğim",
     "lütfen","lutfen","tesekkur","teşekkür",
     "gun","gün","saat","bugun","bugün","yarin","yarın",
-    "adres","konum","yer","sube","şube","klinik","kliniğe"
-    
+    "adres","konum","yer","sube","şube","klinik","kliniğe",
+    "kadikoy","kadıköy","kozyatagi","kozyatağı","mecidiyekoy","mecidiyeköy",
+    "bakirkoy","bakırköy","torun","center","incirli","caddesi","sokak","mahallesi",
+    "sahrayi","cedit","ataturk","atürk"
 }
 _BAD_NAME_TOKS = { _norm_tr(w) for w in _BAD_NAME_TOKS }
 
@@ -1966,7 +1989,7 @@ def load_all_docs():
 
 
 
-APP_NAME = "SailyaiChatbot"
+APP_NAME = "OdyoduyuChatbot"
 
 def app_data_dir() -> Path:
     base = Path(os.getenv("LOCALAPPDATA", Path.home()))
@@ -2011,14 +2034,14 @@ def set_vectordb(vs):
     VDB = vs
 
 FALLBACK_SYS = (
-    "Sen Saily isimli bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
+    "Sen Odyoduyu isimli bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
     "Yalnızca Türkçe konuş ve samimi ama ölçülü bir üslup kullan."
     
     "Elindeki bilgi kaynakları şunlardır:"
     "{context}"
     
     "Bu bağlam, şu başlıklardaki bilgileri içerebilir:"
-    "- Çalışma saatleri ve randevu bilgileri (embed klasörü: Çalışma Saatleri)"
+    "- Çalışma saatleri ve randevu bilgileri (embed klasörü: çalışma_saatleri)"
     "- Adres, şube, konum bilgileri (embed klasörü: konum)"
     "- Verilen hizmetler (embed klasörü: hizmetler)"
     "- Sık sorulan sorular (embed klasörü: faq)"
@@ -2061,7 +2084,20 @@ def init_prompt_and_llm():
     LLM = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=openai_api_key)
     
 
-
+def _norm_score(x):
+    if x is None:
+        return None
+    try:
+        x = float(x)
+    except Exception:
+        return None
+    # 0..1 ise dokunma
+    if 0.0 <= x <= 1.0:
+        return x
+    # -1..1 ise normalize et
+    if -1.0 <= x < 0.0:
+        return (x + 1.0) / 2.0
+    return x
 
 
 def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_chars: int = 6000, rid: str | None = None) -> str:
@@ -2078,6 +2114,18 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
         "işitme testi", "denge", "vestibüler"
     ])
     is_faqy = any(w in ql for w in ["sıkça", "sss", "faq", "nasıl", "nedir", "ücret", "fiyat"])
+    # RDV bilgi sorusu / aksiyon ayrımı (FAQ sıralaması için)
+    is_rdv_info = any(p in ql for p in RDV_INFO_PHRASES)
+    
+    # "aksiyon" basit heuristik (build_context için yeterli)
+    is_rdv_action = (
+        any(p in ql for p in RDV_ACTION_PHRASES)
+        or any(w in ql for w in WEEKDAY_WORDS)
+        or bool(TIME_RE.search(ql))
+        or (ql.strip() in CONFIRM_WORDS)
+        or (ql.strip() in CANCEL_ONLY_KEYWORDS)
+        or (ql.strip() in RESCHEDULE_ONLY_KEYWORDS)
+    )
     
     import uuid
     if not rid:
@@ -2109,7 +2157,7 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
         for d, raw in sim_hits:
             s = raw
             if s is not None and -1.0 <= s <= 1.0:
-                s = (s + 1.0) / 2.0
+                s = _norm_score(s)
             did = doc_id_of(d)
             if did:
                 sim_map[did] = s if s is not None else 1.0
@@ -2160,7 +2208,7 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
     for doc, raw in hits:
         s = 1.0 if raw is None else raw
         if s is not None and -1.0 <= s <= 1.0:
-            s = (s + 1.0) / 2.0
+            s = s = _norm_score(s)
         s = s if s is not None else 1.0
 
         src_l = src_of(doc).lower()
@@ -2174,8 +2222,16 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
             boost += 0.35
 
         # randevu/konum/hizmet odaklı sorularda faq'yı biraz frenle
-        if (is_rdv or is_loc or is_srv) and ("faq" in src_l):
+        # if (is_rdv or is_loc or is_srv) and ("faq" in src_l):
+        #     boost -= 0.15
+        # sadece "aksiyon" randevuda (veya loc/srv) faq'yi frenle
+        if (is_rdv_action or is_loc or is_srv) and ("faq" in src_l):
             boost -= 0.15
+        
+        # randevu bilgi sorularında faq'yi destekle
+        if is_rdv_info and ("faq" in src_l):
+            boost += 0.10
+
         # saf FAQ tarzı soruda faq'ya küçük artı
         if is_faqy and ("faq" in src_l):
             boost += 0.05
@@ -2194,9 +2250,9 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
 
     # Öncelikli kaynaklar (varsa önce)
     priority_wants = []
-    if is_rdv: priority_wants += ["çalışma saatleri.txt", "personel.txt"]
-    if is_loc: priority_wants += ["konum.txt"]
-    if is_srv: priority_wants += ["hizmetler.txt"]            # ⬅️ yeni
+    if is_rdv: priority_wants += ["çalışma saatleri.txt"]
+    if is_loc: priority_wants += ["iletişim.txt"]
+    if is_srv: priority_wants += ["hizmetler.txt", "şube_hizmet_eşleşmesi"]            # ⬅️ yeni
 
     all_keys = list(buckets.keys())
     prios = []
@@ -2242,6 +2298,78 @@ def build_context(question: str, k: int = 6, score_threshold: float = 0.18, max_
 
 
 
+# --- RDV ayrıştırma: bilgi sorusu vs aksiyon ---
+RDV_INFO_PHRASES = [
+    "randevusuz",
+    "rendavusuz"
+    "randevu almadan",
+    "rdv almadan"
+    "randevu gerekli mi",
+    "rdv gerekli mi"
+    "randevu gerekiyor mu",
+    "rdv gerek"
+    "randevu şart mı",
+    "rdv şart"
+    "randevu zorunlu mu",
+    "rdv zorunlu"
+    "randevu olmadan",
+    "rdv olmadan"
+    "randevu sistemi var mı",
+    "rdv sistemi"
+    "randevu ile mi",
+    "randevuyla"
+    "rdv ile"
+    "randevu lazım mı",
+    "rdv şart",
+    "randevu onayı",
+    "randevu aktarımı",
+]
+
+RDV_ACTION_PHRASES = [
+    "randevu al",
+    "rendavu al"
+    "randevu almak",
+    "rdv almak"
+    "randevu oluştur",
+    "rdv oluştur"
+    "randevu oluşturmak",
+    "randevu ayarla",
+    "rdv ayarla"
+    "randevu ayarlamak",
+    "randevu istiyorum"
+    "rdv istiyorum"
+    "randevu talep",
+    "rdv talep"
+    "rezervasyon yap",
+    "rezervasyon yapmak",
+    "rdv al",
+]
+
+def is_rdv_info_question(text: str) -> bool:
+    t = (text or "").lower().strip()
+    return any(p in t for p in RDV_INFO_PHRASES)
+
+def is_rdv_action_intent(text: str) -> bool:
+    t = (text or "").lower().strip()
+
+    # 1) Bilgi sorusuysa aksiyon değildir
+    if is_rdv_info_question(t):
+        return False
+
+    # 2) Açık aksiyon kalıpları
+    if any(p in t for p in RDV_ACTION_PHRASES):
+        return True
+
+    # 3) Tarih/saat/gün/confirm/cancel/reschedule gibi akış tetikleyicileri
+    if any(w in t for w in WEEKDAY_WORDS):
+        return True
+    if bool(TIME_RE.search(t)):
+        return True
+    if t in CONFIRM_WORDS or t in CANCEL_ONLY_KEYWORDS or t in RESCHEDULE_ONLY_KEYWORDS:
+        return True
+
+    # 4) Sadece "randevu" kelimesi geçmesi artık YETMEZ
+    return False
 
 
 
@@ -2258,7 +2386,12 @@ def is_rdv_intent(text: str) -> bool:
         t in CONFIRM_WORDS or t in CANCEL_ONLY_KEYWORDS or t in RESCHEDULE_ONLY_KEYWORDS
     )
 
-
+def is_approvement(text: str) -> bool:
+    t = (text or "").lower().strip()
+    log("is_approvement içinde", "text:", t)
+    return (
+        "onayladım" in t or "onay" in t or "onayladim" in t or "approve" in t  
+    )
 
 
 def _within(h, mi, start=(9,0), end=(18,0)):
@@ -2288,9 +2421,9 @@ def _safe_llm(prompt: str) -> str:
 import re
 
 
-# def _norm_tr(s: str) -> str:
-#     # sende zaten vardır; yoksa basit normalize:
-#     return (s or "").lower().replace("ş","s").replace("ı","i").replace("ğ","g").replace("ö","o").replace("ü","u").replace("ç","c")
+def _norm_tr(s: str) -> str:
+    # sende zaten vardır; yoksa basit normalize:
+    return (s or "").lower().replace("ş","s").replace("ı","i").replace("ğ","g").replace("ö","o").replace("ü","u").replace("ç","c")
 
 _CHANGE_RE = re.compile(
     r"\b("
@@ -2398,11 +2531,13 @@ def _safe2(ret, fallback_reply="Bir şeyler ters gitti. Lütfen tekrar dener mis
     return fallback_reply, (Ctx() if 'Ctx' in globals() else None)
 
 
+
+
 def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     """
     Randevu FSM + fiyat / bilgi / KVKK akışı + genel LLM akışı.
     """
-   
+    import re
     import uuid
     
     rid = f"{uuid.uuid4().hex[:8]}" 
@@ -2434,6 +2569,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     # ---- META / FORCE-WAIT KONTROLÜ ----
     meta = getattr(ctx, "meta", {}) or {}
     force_wait_contact = bool(meta.get("force_wait_contact", False))
+    force_wait_approvement = bool(meta.get("force_wait_approvement", False))
     
     # Kullanıcı gerçekten iletişim bilgisi veriyor mu?
     contact_like = (";" in question)
@@ -2443,14 +2579,17 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     except Exception:
         pass
     
+    approvement_like = is_approvement(question)
+    
+    
     # Eğer daha önce "Ad Soyad ; Telefon ..." cevabı verildiyse
     # ve hâlâ iletişim bilgisi gelmediyse → aynı mesaja yönlendir.
     if force_wait_contact and not contact_like:
         log("[FORCE_WAIT_CONTACT] still waiting for contact info")
         return (
             # "KVKK Aydınlatma Metni’ni okuduğunuzu ve onayladığınızı belirten,\n"
-            "KVKK kutusunu işaretleyip, Ad Soyad ; Telefon \n "
-            "bilgilerinizi örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), \n" 
+            "KVKK kutusunu işaretleyip, Adınızı, Soyadınızı ve Telefon numaranızı \n "
+            "örnekteki gibi paylaşırsanız (Örn: Ad Soyad ; 05XX XXXXXXX), \n" 
             "müşteri temsilcimiz en kısa sürede size dönüş sağlayacaktır."
         )
     
@@ -2462,7 +2601,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             return (
                 "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
                 "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
-                "Ad Soyad ; Telefon ; (ve varsa hizmet) formatında tekrar yazar mısınız?"
+                "Adınızı, Soyadınızı, Telefon numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
             )
     
         # 2) KVKK VARSA: bayrağı kapat, normal akışa devam et
@@ -2470,6 +2610,24 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         ctx.meta = meta
         SESS[sid] = ctx
         log("[FORCE_WAIT_CONTACT] contact info received WITH KVKK, resuming normal flow")
+    
+    log("force:", force_wait_approvement, "approvement_like:", approvement_like)
+    if force_wait_approvement and approvement_like:
+        # 1) KVKK YOKSA: BİLGİYİ ALMA, UYAR
+        if not kvkk_ok:
+            log("[FORCE_WAIT_APPROVEMENT] approvement-like but no KVKK")
+            return (
+                "Kişisel bilgilerinizi almadan önce KVKK Aydınlatma Metni’ni onaylamanız gerekiyor.\n "
+                "Lütfen sohbet penceresinin altındaki KVKK kutusunu işaretleyip, \n"
+                "Adınızı, Soyadınızı, Telefon numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n "
+                " (Örn: Ad Soyad ; 05XX XXXXXXX ; İlgilendiğiniz Hizmet)"
+            )
+    
+        # 2) KVKK VARSA: bayrağı kapat, normal akışa devam et
+        meta["force_wait_approvement"] = False
+        ctx.meta = meta
+        SESS[sid] = ctx
+        log("[FORCE_WAIT_APPROVEMENT] approvement info received WITH KVKK, resuming normal flow") 
 
 
     # Küçük yardımcı
@@ -2497,16 +2655,24 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     pending = meta.get("pending_rdv_after_kvkk", False)
 
     # ADIM 1: Randevu isteği + KVKK yok → KVKK iste
-    if is_rdv_intent(tnorm) and not kvkk_ok:
+    if is_rdv_action_intent(tnorm) and not kvkk_ok:
         meta["pending_rdv_after_kvkk"] = True
         ctx.meta = meta
         SESS[sid] = ctx
+        meta["force_wait_approvement"] = True
+        log("[FORCE_WAIT_APPROVEMENT]")
         return (
             "Randevu oluşturabilmemiz için KVKK Aydınlatma Metni’ni okuduğunuzu ve \n"
             "kişisel verilerinizin işlenmesini onayladığınızı belirtmeniz gerekiyor. \n"
             "Lütfen kutucuğu işaretleyerek onay verin ve ardından **“Onayladım”** diye yazın."
         )
-
+     
+    
+    if is_rdv_action_intent(tnorm) and kvkk_ok:
+        meta["pending_rdv_after_kvkk"] = True
+        ctx.meta = meta
+        SESS[sid] = ctx
+        
     # Kimlik tekrar kontrol
     needs_identity = not identity_complete(ctx)
 
@@ -2515,10 +2681,11 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
         meta["pending_rdv_after_kvkk"] = False  # flag reset
         ctx.meta = meta
         SESS[sid] = ctx
-
+        meta["force_wait_contact"] = True
+        log("[FORCE_WAIT_CONTACT]")
         return (
-            "Teşekkürler, KVKK onayınız alındı. Lütfen Adınızı Soyadınızı ve Telefon Numaranızı örnekteki gibi yazar mısınız?\n"
-            "(Örn Ad Soyad ; 5xx xxxxxxx ; İlgilendiğiniz Hizmet) "
+            "Teşekkürler, KVKK onayınız alındı. Lütfen Adınızı Soyadınızı, Telefon Numaranızı ve ilgilendiğiniz Hizmeti örnekteki gibi yazar mısınız?\n"
+            "(Örn Ad Soyad ; 5xx xxxxxxx ; İlgilendiğiniz Hizmet)  (örneğin: İşitme Testi,İşitme Cihazı Denemesi,Genel Değerlendirme vb.)"
         )
 
     # ADIM 3: Kullanıcı bilgi yazdı → slotları güncelle (zaten başta yaptık, sadece yeniden çekelim)
@@ -2553,6 +2720,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             session_id=sid,
         )
         log("[answer][ensure_crm_lead_from_chat][with_service] res =", res)
+        clear_identity_slots(sid)  
+        meta["pending_rdv_after_kvkk"] = False
 
         if res.get("lead") and res.get("reason") == "ok":
             return (
@@ -2569,7 +2738,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
                 f"'{service}' ile ilgili talebinizi aldım ancak sistemimizde kayıt oluştururken teknik bir sorun yaşandı. "
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
-
+        name = None
     # ----------------------------------------------------
     # 2) SADECE AD + TELEFON VAR (service yok) → 
     #    'Üzgünüm...' ve fiyat senaryoları için LEAD
@@ -2587,6 +2756,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
             session_id=sid,
         )
         log("[answer][ensure_crm_lead_from_chat][no_service] res =", res)
+        clear_identity_slots(sid) 
+        meta["pending_rdv_after_kvkk"] = False
 
         # Fiyat / genel bilgi için mesaj
         if res.get("lead") and res.get("reason") == "ok":
@@ -2606,7 +2777,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
                 f"Endişe etmeyin, ekip arkadaşlarımız yine de {phone} numarasından en kısa sürede size dönüş yapacaktır."
             )
 
-
+        
     # --- Normal LLM / RAG akışı ---
     log(f"[REQ] rid={rid} q='{question[:80]}'")
     ctx_text = build_context(question, rid=rid)
@@ -2624,13 +2795,14 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     # --- FORCE_WAIT_CONTACT BAYRAĞINI LLM CEVABINA GÖRE AYARLA ---
     # Eğer LLM, fiyat/bağlam dışı durumda "Ad Soyad ; Telefon paylaşırsanız..." içeren bir cevap verdiyse
     # bir sonraki mesajda yalnızca iletişim bilgisi bekle.
-    if "Ad Soyad ; Telefon paylaşırsanız" in reply:
-        ctx = SESS.get(sid) or Ctx()
-        meta = getattr(ctx, "meta", {}) or {}
-        meta["force_wait_contact"] = True
-        ctx.meta = meta
-        SESS[sid] = ctx
-        log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
+    # if "Adınızı, Soyadınızı ve Telefon numaranızı" in reply:
+    #     ctx = SESS.get(sid) or Ctx()
+    #     meta = getattr(ctx, "meta", {}) or {}
+    #     meta["force_wait_contact"] = True
+    #     ctx.meta = meta
+    #     SESS[sid] = ctx
+    #     log("[FORCE_WAIT_CONTACT] set to True due to LLM reply")
+
 
     # --- Konuşma geçmişini güncelle ---
     h = get_history(sid)

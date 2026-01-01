@@ -1,12 +1,8 @@
-PERSONEL	Şube	Pazartesi 	Salı 	Çarşamba 	Perşembe 	Cuma 	Cumartesi 	
-Özlem Ruhioğlu Çınar	Kozyatağı Vertigocenter	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
+UZMAN	Şube	Pazartesi 	Salı 	Çarşamba 	Perşembe 	Cuma 	Cumartesi 	
 Özlem Ruhioğlu Çınar	Odyoduyu Bakırköy	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
 Özlem Ruhioğlu Çınar	Odyoduyu Göztepe	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
-Özlem Ruhioğlu Çınar	Şişli Torun Center	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
-İrem Kevser Uygun	Kozyatağı Vertigocenter	 yok		09:00-18:00	yok		09:00-18:00	yok		09:00-17:00 	
 İrem Kevser Uygun	Odyoduyu Bakırköy	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
 İrem Kevser Uygun	Odyoduyu Göztepe	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00 
-İrem Kevser Uygun	Şişli Torun Center	09:00-18:00	yok		09:00-18:00	yok		yok		09:00-18:00 															
 Meryem Ergün	Odyoduyu Bakırköy	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00								
 Berfin Faiz	Odyoduyu Göztepe	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-18:00	09:00-17:00	
 							
