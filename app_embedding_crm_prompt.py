@@ -1617,13 +1617,29 @@ def _parse_structured_fields(text: str) -> dict:
     return out
 
 
-def get_resource_path(*parts) -> Path:
-    """
-    PyInstaller ile paketlendiğinde veya geliştirme ortamında 
-    dosya yolunu doğru döndürür.
-    """
-    base_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-    return base_path.joinpath(*parts)
+# def get_resource_path(*parts) -> Path:
+#     """
+#     PyInstaller ile paketlendiğinde veya geliştirme ortamında 
+#     dosya yolunu doğru döndürür.
+#     """
+#     base_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+#     return base_path.joinpath(*parts)
+
+
+import os, sys
+
+def get_resource_path(rel_path: str) -> str:
+    # 1) Ortamdan kök klasör seç (demo/prod)
+    rr = os.getenv("RESOURCE_ROOT")
+    if rr:
+        return str(Path(rr) / rel_path)
+
+    # 2) PyInstaller
+    if hasattr(sys, "_MEIPASS"):
+        return str(Path(sys._MEIPASS) / rel_path)
+
+    # 3) Fallback: bu dosyanın klasörü (cwd değil!)
+    return str(Path(__file__).resolve().parent / rel_path)
 
 
 
@@ -2034,7 +2050,7 @@ def set_vectordb(vs):
     VDB = vs
 
 FALLBACK_SYS = (
-    "Sen Odyoduyu isimli bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
+    "Sen bir işitme merkezinde çalışan, nazik ve profesyonel bir müşteri temsilcisisin. "
     "Yalnızca Türkçe konuş ve samimi ama ölçülü bir üslup kullan."
     
     "Elindeki bilgi kaynakları şunlardır:"
