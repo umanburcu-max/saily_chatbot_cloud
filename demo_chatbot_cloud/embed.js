@@ -1,10 +1,44 @@
-// embed.js
+// embed.js (sağlamlaştırılmış)
 (function(){
+  const script = document.currentScript;
+
+  function normBaseUrl(u) {
+    if (!u) return "";
+    u = String(u).trim();
+
+    // Bazı durumlar: "null", "undefined"
+    if (!u || u === "null" || u === "undefined") return "";
+
+    // Relative ise absolute yap
+    if (u.startsWith("/")) {
+      u = window.location.origin + u;
+    }
+
+    // Sondaki slash temizle
+    u = u.replace(/\/+$/, "");
+    return u;
+  }
+
+  function pickApiBase() {
+    // Öncelik: data-api > (opsiyonel) query ?api= > origin
+    const dataApi = script ? script.getAttribute("data-api") : "";
+    const qsApi = new URLSearchParams(window.location.search).get("api");
+    return normBaseUrl(dataApi) || normBaseUrl(qsApi) || window.location.origin;
+  }
+
+  function pickWidgetUrl() {
+    // data-widget relative/absolute olabilir
+    const widgetPath = (script && script.getAttribute("data-widget")) || "/widget.html";
+    // URL() ile normalize edelim
+    return new URL(widgetPath, window.location.origin);
+  }
+
   const CFG = {
-    api:    (document.currentScript.getAttribute('data-api') || 'https://chatlog.api-saily.com'),
-    key:    (document.currentScript.getAttribute('data-key') || ''), // X-Internal-Key
-    theme:  (document.currentScript.getAttribute('data-theme') || 'light'),
-    title:  (document.currentScript.getAttribute('data-title') || 'SAILY'),
+    api:    pickApiBase(),
+    key:    (script && script.getAttribute('data-key')) || '', // X-Internal-Key
+    theme:  (script && script.getAttribute('data-theme')) || 'light',
+    title:  (script && script.getAttribute('data-title')) || 'SAILY',
+    v:      (script && script.getAttribute('data-v')) || ''   // opsiyonel cache buster
   };
 
   // container
@@ -39,15 +73,15 @@
 
   // iframe
   const iframe = document.createElement('iframe');
-  const qs = new URLSearchParams({
-    api: CFG.api,
-    key: CFG.key,
-    theme: CFG.theme,
-    title: CFG.title
-  }).toString();
 
-  // widget.html dosyanızın tam yolu (aynı sitenizden servis edin)
-  iframe.src = (document.currentScript.getAttribute('data-widget') || '/widget.html') + '?' + qs;
+  const widgetUrl = pickWidgetUrl();
+  widgetUrl.searchParams.set("api", CFG.api);
+  if (CFG.key)   widgetUrl.searchParams.set("key", CFG.key);
+  if (CFG.theme) widgetUrl.searchParams.set("theme", CFG.theme);
+  if (CFG.title) widgetUrl.searchParams.set("title", CFG.title);
+  if (CFG.v)     widgetUrl.searchParams.set("v", CFG.v); // cache buster
+
+  iframe.src = widgetUrl.toString();
   iframe.allow = 'clipboard-write;'; // isterseniz microphone vb eklenebilir
   iframe.style.cssText = 'width:100%; height:100%; border:0; background:#fff;';
   wrap.appendChild(iframe);
