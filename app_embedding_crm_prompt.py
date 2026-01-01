@@ -1628,20 +1628,15 @@ def _parse_structured_fields(text: str) -> dict:
 
 import os, sys
 
-def get_resource_path(rel_path: str) -> str:
-    # 1) Ortamdan kök klasör seç (demo/prod)
+def get_resource_path(rel_path: str) -> Path:
     rr = os.getenv("RESOURCE_ROOT")
     if rr:
-        return str(Path(rr) / rel_path)
+        return Path(rr) / rel_path
 
-    # 2) PyInstaller
     if hasattr(sys, "_MEIPASS"):
-        return str(Path(sys._MEIPASS) / rel_path)
+        return Path(sys._MEIPASS) / rel_path
 
-    # 3) Fallback: bu dosyanın klasörü (cwd değil!)
-    return str(Path(__file__).resolve().parent / rel_path)
-
-
+    return Path(__file__).resolve().parent / rel_path
 
 
 
