@@ -1,5 +1,5 @@
 ŞUBE,KONUM
-Kozyatağı Vertigocenter, Sahrayı Cedit, Atatürk Cd. No: 69, 34734 Kadıköy/İstanbul
-Odyoduyu Bakırköy,Kartaltepe, İncirli Cd. No:72C, 34140 Bakırköy/İstanbul
-Odyoduyu Göztepe,Merdivenköy, Fahrettin Kerim Gökay Cd No:158/3, 34732 Kadıköy/İstanbul
-Şişli Torun Center,Şişli Torun Center
+ Atatürk Cd. No: 69 (DEMO),İstanbul (DEMO adres)
+ İncirli Cd. No:72C (DEMO),İstanbul (DEMO adres)
+ Fahrettin Kerim Gökay Cd No:158/3 (DEMO),İstanbul (DEMO adres)
+ Bağdat Cd No:34 (DEMO),İstanbul (DEMO adres)
