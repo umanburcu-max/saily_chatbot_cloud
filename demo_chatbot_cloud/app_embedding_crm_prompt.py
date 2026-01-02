@@ -2544,7 +2544,7 @@ def _safe2(ret, fallback_reply="Bir şeyler ters gitti. Lütfen tekrar dener mis
 
 
 
-def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
+def answer(question: str, sid: str, kvkk_ok: bool = False, whatsapp_ok: bool = False) -> str:
     """
     Randevu FSM + fiyat / bilgi / KVKK akışı + genel LLM akışı.
     """
@@ -2558,6 +2558,7 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     log("[answer]:[question]", question)
     log("[past]:", past)
     log("kvkk_ok", kvkk_ok)
+    log("whatsapp_ok", whatsapp_ok)
 
     # 0) Her mesajdan alanları çıkar → slotlara yaz
     update_slots_from_text(sid, question)
@@ -2592,7 +2593,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False) -> str:
     
     approvement_like = is_approvement(question)
     
-    
+    if whatsapp_ok:
+        return ("whastappdan geliyor")
     # Eğer daha önce "Ad Soyad ; Telefon ..." cevabı verildiyse
     # ve hâlâ iletişim bilgisi gelmediyse → aynı mesaja yönlendir.
     if force_wait_contact and not contact_like:
@@ -3013,12 +3015,13 @@ def chat():
         # ✅ SID’i burada normalize et / üret
         sid = get_session_id(data.get("session_id"))
         kvkk_ok = bool(data.get("kvkk_ok", False))
+        whatsapp_ok = bool(data.get("whatsapp_ok", False))
 
         if not user_message:
             return jsonify({"ok": False, "reply": "", "error": "Boş mesaj"}), 400
 
         # ✅ Aynı SID’i answer'a geçir
-        bot_reply = (answer(user_message, sid, kvkk_ok=kvkk_ok) or "").strip()
+        bot_reply = (answer(user_message, sid, kvkk_ok=kvkk_ok, whatsapp_ok=whatsapp_ok) or "").strip()
         if not bot_reply:
             bot_reply = "Merhaba! Mesajınızı aldım. Nasıl yardımcı olabilirim?"
 
