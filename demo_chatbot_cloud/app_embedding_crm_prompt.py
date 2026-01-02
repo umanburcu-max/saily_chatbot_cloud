@@ -2593,8 +2593,8 @@ def answer(question: str, sid: str, kvkk_ok: bool = False, whatsapp_ok: bool = F
     
     approvement_like = is_approvement(question)
     
-    if whatsapp_ok:
-        return ("whastappdan geliyor")
+    # if whatsapp_ok:
+    #     return ("whastappdan geliyor")
     # Eğer daha önce "Ad Soyad ; Telefon ..." cevabı verildiyse
     # ve hâlâ iletişim bilgisi gelmediyse → aynı mesaja yönlendir.
     if force_wait_contact and not contact_like:
