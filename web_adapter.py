@@ -43,6 +43,7 @@ ALLOWED_ORIGINS = [
     "https://sailyai.com",
     "https://chat.api.sailyai.com"
     "https://wwww.odyoduyu.com"
+    "http:://hospitable-love-production.up.railway.app"
     # "https://www.senin-site.com",
 ]
 app.add_middleware(
@@ -86,6 +87,7 @@ class ChatIn(BaseModel):
     session_id: str = Field(..., description="Oturum anahtarı (sid)")
     message: str = Field(..., description="Kullanıcı mesajı / soru")
     kvkk_ok: bool = Field(False, description="KVKK onayı (checkbox)")
+    whatsapp_ok: bool = Field(False, description="Whatsapp mesajı")
 
 class ChatOut(BaseModel):
     reply: str
@@ -102,12 +104,12 @@ async def chat(in_: ChatIn) -> ChatOut:
     """
     
     t0 = time.perf_counter()
-    logger.info(f"CALL answer sid={in_.session_id} len(msg)={len(in_.message)} kvkk_ok={in_.kvkk_ok}")
+    logger.info(f"CALL answer sid={in_.session_id} len(msg)={len(in_.message)} kvkk_ok={in_.kvkk_ok} whatsapp_ok={in_.whatsapp_ok}")
 
     try:
         # answer senkron → event loop'u bloklamamak için threadpool'da
         reply: str = await asyncio.wait_for(
-            run_in_threadpool(core_answer, in_.message, in_.session_id, in_.kvkk_ok),
+            run_in_threadpool(core_answer, in_.message, in_.session_id, in_.kvkk_ok, in_.whatsapp_ok),
             timeout=ANSWER_TIMEOUT
         )
     except asyncio.TimeoutError:

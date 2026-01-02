@@ -198,6 +198,7 @@ def generate_reply(
         user_id: Optional[str] = None,
         request_id: Optional[str] = None,
         kvkk_ok: Optional[bool] = None,   # ✅ EKLENDİ
+        whatsapp_ok:Optional[bool] = None,
     ) -> str:
     """Proxy the user_text to Saily upstream API and return assistant reply text.
     Falls back gracefully if the response shape differs.
@@ -217,6 +218,8 @@ def generate_reply(
     if kvkk_ok is not None:
         payload["kvkk_ok"] = kvkk_ok
     # Common optional fields that Saily might accept
+    if whatsapp_ok is not None:
+        payload["whatsapp_ok"] = whatsapp_ok
     if session_id:
         payload["session_id"] = session_id
     if user_id:
@@ -376,6 +379,7 @@ def chat():
         request_id = payload.get("request_id") or str(uuid.uuid4())
         # ✅ KVKK bayrağını al
         kvkk_ok = payload.get("kvkk_ok", False)
+        whatsapp_ok = payload.get("whatsapp_ok", False)
 
         if not session_id:
             return jsonify({"error": "session_id is required"}), 400
@@ -419,7 +423,7 @@ def chat():
 
         # Generate reply and measure latency
         t0 = time.perf_counter()
-        reply_text = generate_reply(message, session_id=session_id, user_id=user_id, request_id=request_id, kvkk_ok=kvkk_ok, )
+        reply_text = generate_reply(message, session_id=session_id, user_id=user_id, request_id=request_id, kvkk_ok=kvkk_ok, whatsapp_ok=whatsapp_ok)
         latency = int((time.perf_counter() - t0) * 1000)
 
         # Log assistant reply
